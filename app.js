@@ -1,61 +1,41 @@
 
 const STORAGE_KEY='healthLabData';
-const LEGACY_KEY='atlasHealthData';
 const THEME_KEY='healthLabTheme';
 const $=id=>document.getElementById(id);
-
+function clone(v){return JSON.parse(JSON.stringify(v))}
 const defaults={
-  schemaVersion:2,
+  schemaVersion:3,
   profile:{name:'Luis'},
-  symptoms:[
-    {id:'fatigue',name:'Cansancio al despertar',type:'scale',min:0,max:10,enabled:true,order:1,description:'Sensación general de cansancio'},
-    {id:'legFatigue',name:'Piernas cargadas',type:'scale',min:0,max:10,enabled:true,order:2,description:'Sensación de llevar muchos kilómetros'},
-    {id:'handSwelling',name:'Inflamación de manos',type:'scale',min:0,max:10,enabled:true,order:3,description:'Hinchazón visible o sensación de inflamación'},
-    {id:'handPain',name:'Dolor en manos',type:'scale',min:0,max:10,enabled:true,order:4,description:'Dolor articular o de tejidos blandos'},
-    {id:'handStiffness',name:'Rigidez de manos',type:'scale',min:0,max:10,enabled:true,order:5,description:'Dificultad para mover o cerrar la mano'},
-    {id:'peeling',name:'Descamación',type:'scale',min:0,max:3,enabled:true,order:6,description:'Descamación de palmas o dedos'},
-    {id:'sleepQuality',name:'Calidad del sueño',type:'scale',min:0,max:10,enabled:true,order:7,description:'Percepción subjetiva del descanso'}
-  ],
-  supplements:[
-    {id:'multivitamin',name:'Multivitamínico',enabled:true,order:1,description:'Composición pendiente de completar',composition:[]},
-    {id:'omega3',name:'Omega-3',enabled:true,order:2,description:'EPA + DHA',composition:[]},
-    {id:'magnesium',name:'Magnesio',enabled:true,order:3,description:'Magnesio elemental',composition:[]},
-    {id:'creatine',name:'Creatina',enabled:true,order:4,description:'5 g',composition:[{nutrient:'Creatina',amount:5,unit:'g'}]},
-    {id:'protein',name:'Proteína whey',enabled:true,order:5,description:'Cantidad de polvo y % de proteína',composition:[]},
-    {id:'coq10',name:'CoQ10',enabled:true,order:6,description:'Con B2 y selenio',composition:[]},
-    {id:'hydroferol',name:'Hidroferol 0,266 mg',enabled:true,order:7,description:'Pauta mensual',composition:[{nutrient:'Calcifediol',amount:0.266,unit:'mg'}]}
-  ],
+  symptoms:[],
+  supplements:[],
   medications:[],
   trainingTypes:[
-    {id:'rest',name:'Descanso',enabled:true,order:1,description:''},
-    {id:'easyRun',name:'Carrera suave',enabled:true,order:2,description:''},
-    {id:'trail',name:'Trail / desnivel',enabled:true,order:3,description:''},
-    {id:'hardRun',name:'Carrera intensa',enabled:true,order:4,description:''},
-    {id:'strength',name:'Fuerza',enabled:true,order:5,description:''},
-    {id:'bike',name:'Spinning / bici',enabled:true,order:6,description:''},
-    {id:'mobility',name:'Movilidad / yoga',enabled:true,order:7,description:''},
-    {id:'race',name:'Competición',enabled:true,order:8,description:''}
+    {id:'rest',name:'Descanso',enabled:true,order:1},
+    {id:'easyRun',name:'Carrera suave',enabled:true,order:2},
+    {id:'trail',name:'Trail / desnivel',enabled:true,order:3},
+    {id:'hardRun',name:'Carrera intensa',enabled:true,order:4},
+    {id:'strength',name:'Fuerza',enabled:true,order:5},
+    {id:'bike',name:'Spinning / bici',enabled:true,order:6},
+    {id:'mobility',name:'Movilidad / yoga',enabled:true,order:7},
+    {id:'race',name:'Competición',enabled:true,order:8}
   ],
   entries:[],
   events:[]
 };
-
-function clone(v){return JSON.parse(JSON.stringify(v))}
 function loadData(){
   try{
-    const current=localStorage.getItem(STORAGE_KEY);
-    if(current)return JSON.parse(current);
-    const legacy=localStorage.getItem(LEGACY_KEY);
-    if(legacy){
-      const old=JSON.parse(legacy);
-      const merged={...clone(defaults),...old,schemaVersion:2};
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(merged));
-      return merged;
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const d=JSON.parse(raw);
+      d.entries=d.entries||[];
+      d.trainingTypes=d.trainingTypes?.length?d.trainingTypes:clone(defaults.trainingTypes);
+      return d;
     }
   }catch{}
-  const d=clone(defaults);saveData(d);return d;
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(defaults));
+  return clone(defaults);
 }
-function saveData(data){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
+function saveData(){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
 let data=loadData();
 
 function go(screen){
@@ -63,190 +43,160 @@ function go(screen){
   document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.go===screen));
   $(screen).classList.add('active');
   window.scrollTo({top:0,behavior:'smooth'});
-  if(screen==='settings')renderSettings();
+  if(screen==='record')prepareForm();
+  if(screen==='calendar')renderCalendar();
+  if(screen==='stats')renderStats();
 }
 document.querySelectorAll('[data-go]').forEach(btn=>btn.addEventListener('click',()=>go(btn.dataset.go)));
 
 const now=new Date();
 $('todayText').textContent=new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long'}).format(now);
 
-function applyTheme(theme){
-  document.documentElement.dataset.theme=theme;
-  localStorage.setItem(THEME_KEY,theme);
-}
+function applyTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem(THEME_KEY,theme)}
 applyTheme(localStorage.getItem(THEME_KEY)||'light');
 $('themeToggle').onclick=()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
 
-const listMap={
-  symptoms:'symptomsList',
-  supplements:'supplementsList',
-  medications:'medicationsList',
-  trainingTypes:'trainingTypesList'
-};
+document.querySelectorAll('input[type=range]').forEach(r=>{
+  const out=r.parentElement.querySelector('output');
+  const sync=()=>out.textContent=r.value;
+  r.addEventListener('input',sync);sync();
+});
 
-function renderSettings(){
-  Object.keys(listMap).forEach(type=>renderConfigList(type));
+function todayISO(){return new Date().toISOString().slice(0,10)}
+function prepareForm(){
+  $('entryDate').value=todayISO();
+  $('trainingType').innerHTML=data.trainingTypes.filter(x=>x.enabled!==false).sort((a,b)=>(a.order||0)-(b.order||0)).map(x=>`<option value="${x.id}">${x.name}</option>`).join('');
 }
+$('trainedYesterday').onchange=()=>$('trainingFields').classList.toggle('hidden',!$('trainedYesterday').checked);
 
-function renderConfigList(type){
-  const container=$(listMap[type]);
-  const items=[...(data[type]||[])].sort((a,b)=>(a.order||0)-(b.order||0));
-  if(!items.length){
-    container.innerHTML='<div class="empty-config">Todavía no hay elementos.</div>';
-    return;
-  }
-  container.innerHTML=items.map((item,index)=>`
-    <div class="config-item" draggable="true" data-type="${type}" data-id="${item.id}">
-      <span class="config-grip">☰</span>
-      <div class="config-main">
-        <strong>${escapeHtml(item.name)}</strong>
-        <small>${escapeHtml(item.description||'Sin descripción')}</small>
-      </div>
-      <button class="config-toggle ${item.enabled!==false?'on':''}" data-toggle="${item.id}" data-type="${type}" aria-label="Activar o desactivar"></button>
-      <button class="icon-mini" data-edit="${item.id}" data-type="${type}" aria-label="Editar">✎</button>
-      <button class="icon-mini danger-text" data-delete="${item.id}" data-type="${type}" aria-label="Eliminar">×</button>
-    </div>
-  `).join('');
-
-  container.querySelectorAll('[data-toggle]').forEach(btn=>btn.onclick=()=>{
-    const item=data[type].find(x=>x.id===btn.dataset.toggle);
-    item.enabled=!item.enabled;saveData(data);renderConfigList(type);
-  });
-  container.querySelectorAll('[data-edit]').forEach(btn=>btn.onclick=()=>openEditor(type,btn.dataset.edit));
-  container.querySelectorAll('[data-delete]').forEach(btn=>btn.onclick=()=>deleteItem(type,btn.dataset.delete));
-  enableDrag(container,type);
-}
-
-function enableDrag(container,type){
-  let dragged=null;
-  container.querySelectorAll('.config-item').forEach(el=>{
-    el.addEventListener('dragstart',()=>{dragged=el;el.classList.add('dragging')});
-    el.addEventListener('dragend',()=>{el.classList.remove('dragging');dragged=null;saveOrder(container,type)});
-    el.addEventListener('dragover',e=>{
-      e.preventDefault();
-      const target=e.currentTarget;
-      if(!dragged||target===dragged)return;
-      const rect=target.getBoundingClientRect();
-      container.insertBefore(dragged,e.clientY<rect.top+rect.height/2?target:target.nextSibling);
-    });
-  });
-}
-function saveOrder(container,type){
-  [...container.querySelectorAll('.config-item')].forEach((el,i)=>{
-    const item=data[type].find(x=>x.id===el.dataset.id);
-    if(item)item.order=i+1;
-  });
-  saveData(data);
-}
-
-function openEditor(type,id=null){
-  const item=id?data[type].find(x=>x.id===id):null;
-  const isSupplement=type==='supplements';
-  const modal=document.createElement('div');
-  modal.className='modal-backdrop open';
-  modal.innerHTML=`
-    <div class="modal">
-      <h3>${item?'Editar':'Añadir'} ${labelFor(type)}</h3>
-      <div class="modal-grid">
-        <label>Nombre
-          <input id="modalName" value="${escapeAttr(item?.name||'')}" placeholder="Nombre">
-        </label>
-        <label>Descripción
-          <textarea id="modalDescription" rows="2" placeholder="Información útil">${escapeHtml(item?.description||'')}</textarea>
-        </label>
-        ${type==='symptoms'?`
-          <label>Tipo
-            <select id="modalSymptomType">
-              <option value="scale" ${(item?.type||'scale')==='scale'?'selected':''}>Escala</option>
-              <option value="boolean" ${item?.type==='boolean'?'selected':''}>Sí / No</option>
-              <option value="text" ${item?.type==='text'?'selected':''}>Texto</option>
-            </select>
-          </label>
-          <label>Máximo de escala
-            <input id="modalMax" type="number" min="1" max="100" value="${item?.max||10}">
-          </label>`:''}
-        ${isSupplement?`
-          <label>Composición
-            <textarea id="modalComposition" rows="5" placeholder="Una línea por nutriente: Vitamina D|25|µg">${compositionToText(item?.composition||[])}</textarea>
-          </label>
-          <small class="muted">Formato: Nutriente|cantidad|unidad</small>`:''}
-      </div>
-      <div class="modal-actions">
-        <button class="secondary-button" id="modalCancel">Cancelar</button>
-        <button class="primary" id="modalSave">Guardar</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.onclick=e=>{if(e.target===modal)modal.remove()};
-  modal.querySelector('#modalCancel').onclick=()=>modal.remove();
-  modal.querySelector('#modalSave').onclick=()=>{
-    const name=modal.querySelector('#modalName').value.trim();
-    if(!name)return alert('Pon un nombre.');
-    const baseItem=item||{
-      id:crypto.randomUUID?crypto.randomUUID():Date.now().toString(),
-      enabled:true,
-      order:(data[type]?.length||0)+1
-    };
-    baseItem.name=name;
-    baseItem.description=modal.querySelector('#modalDescription').value.trim();
-    if(type==='symptoms'){
-      baseItem.type=modal.querySelector('#modalSymptomType').value;
-      baseItem.min=0;
-      baseItem.max=Number(modal.querySelector('#modalMax').value||10);
-    }
-    if(isSupplement)baseItem.composition=textToComposition(modal.querySelector('#modalComposition').value);
-    if(!item)data[type].push(baseItem);
-    saveData(data);modal.remove();renderConfigList(type);
+$('quickForm').onsubmit=e=>{
+  e.preventDefault();
+  const date=$('entryDate').value||todayISO();
+  const entry={
+    id:Date.now(),date,
+    fatigue:Number($('fatigue').value),
+    legFatigue:Number($('legFatigue').value),
+    handSwelling:Number($('handSwelling').value),
+    handPain:Number($('handPain').value),
+    handStiffness:Number($('handStiffness').value),
+    peeling:Number($('peeling').value),
+    sleepQuality:Number($('sleepQuality').value),
+    trainedYesterday:$('trainedYesterday').checked,
+    trainingType:$('trainedYesterday').checked?$('trainingType').value:'',
+    trainingMinutes:$('trainedYesterday').checked?Number($('trainingMinutes').value||0):0,
+    rpeLegs:$('trainedYesterday').checked?Number($('rpeLegs').value):0,
+    rpeCardio:$('trainedYesterday').checked?Number($('rpeCardio').value):0,
+    supplementRoutine:(document.querySelector('input[name="suppRoutine"]:checked')||{}).value||'yes',
+    notes:$('notes').value.trim()
   };
-}
-
-function deleteItem(type,id){
-  const item=data[type].find(x=>x.id===id);
-  if(!confirm(`¿Eliminar "${item?.name||'este elemento'}"?`))return;
-  data[type]=data[type].filter(x=>x.id!==id);
-  saveData(data);renderConfigList(type);
-}
-
-function labelFor(type){
-  return ({symptoms:'síntoma',supplements:'suplemento',medications:'medicación',trainingTypes:'tipo de entrenamiento'})[type];
-}
-function compositionToText(comp){
-  return (comp||[]).map(x=>`${x.nutrient}|${x.amount}|${x.unit}`).join('\n');
-}
-function textToComposition(text){
-  return text.split('\n').map(x=>x.trim()).filter(Boolean).map(line=>{
-    const [nutrient,amount,unit]=line.split('|').map(x=>x?.trim());
-    return {nutrient:nutrient||'',amount:Number(amount)||0,unit:unit||''};
-  });
-}
-function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function escapeAttr(s){return escapeHtml(s).replace(/"/g,'&quot;')}
-
-document.querySelectorAll('[data-add]').forEach(btn=>btn.addEventListener('click',()=>openEditor(btn.dataset.add)));
-
-$('exportConfig').onclick=()=>{
-  const payload={schemaVersion:data.schemaVersion,profile:data.profile,symptoms:data.symptoms,supplements:data.supplements,medications:data.medications,trainingTypes:data.trainingTypes};
-  download(JSON.stringify(payload,null,2),'healthlab_config.json','application/json');
-};
-$('importConfig').onchange=async e=>{
-  try{
-    const imported=JSON.parse(await e.target.files[0].text());
-    ['symptoms','supplements','medications','trainingTypes'].forEach(k=>{
-      if(Array.isArray(imported[k]))data[k]=imported[k];
-    });
-    saveData(data);renderSettings();alert('Configuración importada.');
-  }catch{alert('Archivo no válido.')}
-};
-function download(content,name,type){
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([content],{type}));
-  a.download=name;a.click();URL.revokeObjectURL(a.href);
-}
-
-$('resetDemo').onclick=()=>{
-  if(confirm('¿Borrar toda la configuración y los futuros registros locales de HealthLab?')){
-    data=clone(defaults);saveData(data);renderSettings();alert('HealthLab restablecido.');
+  const idx=data.entries.findIndex(x=>x.date===date);
+  if(idx>=0){
+    if(!confirm('Ya hay un registro para esa fecha. ¿Sustituirlo?'))return;
+    entry.id=data.entries[idx].id;
+    data.entries.splice(idx,1);
   }
+  data.entries.push(entry);
+  data.entries.sort((a,b)=>a.date.localeCompare(b.date));
+  saveData();
+  alert('Registro guardado.');
+  resetForm();
+  go('home');
+  updateHome();
 };
+function resetForm(){
+  $('quickForm').reset();
+  document.querySelectorAll('input[type=range]').forEach(r=>{r.value=0;r.dispatchEvent(new Event('input'))});
+  $('trainingFields').classList.add('hidden');
+  $('entryDate').value=todayISO();
+}
+
+function updateHome(){
+  const e=data.entries.find(x=>x.date===todayISO());
+  const cards=document.querySelectorAll('.metric-card strong');
+  if(cards[0])cards[0].textContent=e?e.handSwelling:0;
+  if(cards[1])cards[1].textContent=e?e.fatigue:0;
+  const pill=document.querySelector('.hero-card .pill');
+  if(pill)pill.textContent=e?'Registro completado':'Registro pendiente';
+}
+updateHome();
+
+let calendarDate=new Date();
+$('prevMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar()};
+$('nextMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar()};
+
+function renderCalendar(){
+  const year=calendarDate.getFullYear(),month=calendarDate.getMonth();
+  $('calendarTitle').textContent=new Intl.DateTimeFormat('es-ES',{month:'long',year:'numeric'}).format(calendarDate);
+  const first=new Date(year,month,1),last=new Date(year,month+1,0);
+  const start=(first.getDay()+6)%7;
+  const cells=[];
+  for(let i=0;i<start;i++)cells.push('<div class="day empty"></div>');
+  for(let d=1;d<=last.getDate();d++){
+    const iso=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const e=data.entries.find(x=>x.date===iso);
+    let severity=0;
+    if(e){
+      const max=Math.max(e.handSwelling,e.handPain,e.handStiffness,e.fatigue,e.legFatigue);
+      severity=max>=7?3:max>=4?2:1;
+    }
+    const today=iso===todayISO()?' today':'';
+    cells.push(`<button class="day ${e?'has-entry severity-'+severity:''}${today}" data-date="${iso}">${d}${e?'<span class="day-dot"></span>':''}</button>`);
+  }
+  $('calendarGrid').innerHTML=cells.join('');
+  document.querySelectorAll('.day[data-date]').forEach(b=>b.onclick=()=>showDay(b.dataset.date));
+}
+function showDay(date){
+  const e=data.entries.find(x=>x.date===date);
+  $('dayDetail').innerHTML=e?`
+    <div class="day-detail-card">
+      <strong>${formatDate(date)}</strong>
+      <p>Inflamación ${e.handSwelling}/10 · Dolor ${e.handPain}/10 · Rigidez ${e.handStiffness}/10</p>
+      <p>Cansancio ${e.fatigue}/10 · Piernas ${e.legFatigue}/10 · Sueño ${e.sleepQuality}/10</p>
+      ${e.trainedYesterday?`<p>Entrenamiento: ${trainingName(e.trainingType)} · ${e.trainingMinutes} min · RPE piernas ${e.rpeLegs} · cardio ${e.rpeCardio}</p>`:''}
+      ${e.notes?`<p>${escapeHtml(e.notes)}</p>`:''}
+      <button class="danger" onclick="deleteEntry('${date}')">Eliminar</button>
+    </div>`:`<div class="day-detail-card"><strong>${formatDate(date)}</strong><p class="muted">Sin registro.</p></div>`;
+}
+function deleteEntry(date){
+  if(!confirm('¿Eliminar este registro?'))return;
+  data.entries=data.entries.filter(x=>x.date!==date);saveData();renderCalendar();$('dayDetail').innerHTML='';updateHome();
+}
+function trainingName(id){return data.trainingTypes.find(x=>x.id===id)?.name||id}
+function formatDate(d){return new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(d+'T12:00:00'))}
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+
+$('statsPeriod').onchange=renderStats;
+function filteredEntries(){
+  const p=$('statsPeriod').value;
+  if(p==='all')return [...data.entries];
+  const cut=new Date();cut.setHours(0,0,0,0);cut.setDate(cut.getDate()-(Number(p)-1));
+  return data.entries.filter(e=>new Date(e.date+'T12:00:00')>=cut);
+}
+function avg(arr,key){return arr.length?(arr.reduce((s,e)=>s+Number(e[key]||0),0)/arr.length).toFixed(1):'—'}
+function renderStats(){
+  const arr=filteredEntries().sort((a,b)=>a.date.localeCompare(b.date));
+  const cards=[
+    ['Días registrados',arr.length],
+    ['Inflamación media',avg(arr,'handSwelling')],
+    ['Cansancio medio',avg(arr,'fatigue')],
+    ['Días con descamación',arr.filter(e=>e.peeling>0).length]
+  ];
+  $('statsCards').innerHTML=cards.map(([l,v])=>`<article class="stat-card"><span>${l}</span><strong>${v}</strong></article>`).join('');
+  drawChart(arr);
+}
+function drawChart(arr){
+  const c=$('statsChart'),ctx=c.getContext('2d'),dpr=devicePixelRatio||1,w=c.clientWidth||700,h=220;
+  c.width=w*dpr;c.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='#dfe8e8';ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){const y=20+i*(h-40)/5;ctx.beginPath();ctx.moveTo(28,y);ctx.lineTo(w-8,y);ctx.stroke()}
+  if(!arr.length){ctx.fillStyle='#74868b';ctx.fillText('Sin datos',w/2-20,h/2);return}
+  const plot=(key,color)=>{
+    ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();
+    arr.forEach((e,i)=>{const x=30+i*(w-44)/Math.max(1,arr.length-1),y=h-20-(Number(e[key]||0)/10)*(h-40);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
+    ctx.stroke();
+  };
+  plot('handSwelling','#0f766e');plot('fatigue','#d99a24');
+}
 
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+prepareForm();

@@ -19,3 +19,16 @@ Aplicación PWA de seguimiento clínico-deportivo personal.
 - Iconos iOS 180 y 120 px.
 - Favicon.
 - Logo visible en la cabecera.
+
+
+## v0.3 funcional
+- Registro diario real.
+- Valores por defecto a cero.
+- Cansancio y piernas cargadas.
+- Inflamación, dolor, rigidez y descamación.
+- Sueño.
+- Entrenamiento de ayer.
+- RPE piernas y RPE cardio.
+- Rutina habitual de suplementos.
+- Calendario e historial.
+- Estadísticas básicas.

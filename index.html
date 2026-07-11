@@ -52,31 +52,127 @@
 
     <section id="record" class="screen">
       <div class="page-title">
-        <div><span class="kicker">REGISTRO</span><h2>Elige el nivel de detalle</h2></div>
+        <div><span class="kicker">REGISTRO</span><h2>¿Cómo has amanecido?</h2></div>
       </div>
-      <button class="choice-card">
-        <span class="choice-icon">⚡</span>
-        <span><strong>Registro rápido</strong><small>20–30 segundos</small></span>
-        <span>›</span>
-      </button>
-      <button class="choice-card">
-        <span class="choice-icon">✚</span>
-        <span><strong>Registro detallado</strong><small>Para brotes o días relevantes</small></span>
-        <span>›</span>
-      </button>
-      <article class="card">
-        <p class="muted">En la siguiente iteración conectaremos estos botones con los formularios configurables.</p>
-      </article>
+
+      <form id="quickForm">
+        <article class="card form-card">
+          <div class="form-head">
+            <div><span class="kicker">HOY</span><h3>Estado al despertar</h3></div>
+            <input id="entryDate" type="date">
+          </div>
+
+          <div class="metric-form-grid">
+            <label class="scale-card">
+              <span>Cansancio</span>
+              <div class="scale-control"><input id="fatigue" type="range" min="0" max="10" value="0"><output>0</output></div>
+            </label>
+            <label class="scale-card">
+              <span>Piernas cargadas</span>
+              <div class="scale-control"><input id="legFatigue" type="range" min="0" max="10" value="0"><output>0</output></div>
+            </label>
+            <label class="scale-card">
+              <span>Inflamación manos</span>
+              <div class="scale-control"><input id="handSwelling" type="range" min="0" max="10" value="0"><output>0</output></div>
+            </label>
+            <label class="scale-card">
+              <span>Dolor manos</span>
+              <div class="scale-control"><input id="handPain" type="range" min="0" max="10" value="0"><output>0</output></div>
+            </label>
+            <label class="scale-card">
+              <span>Rigidez manos</span>
+              <div class="scale-control"><input id="handStiffness" type="range" min="0" max="10" value="0"><output>0</output></div>
+            </label>
+            <label class="scale-card">
+              <span>Descamación</span>
+              <div class="scale-control"><input id="peeling" type="range" min="0" max="3" value="0"><output>0</output></div>
+            </label>
+            <label class="scale-card">
+              <span>Calidad del sueño</span>
+              <div class="scale-control"><input id="sleepQuality" type="range" min="0" max="10" value="0"><output>0</output></div>
+            </label>
+          </div>
+        </article>
+
+        <article class="card form-card">
+          <div class="section-title split">
+            <div><span class="kicker">AYER</span><h3>Entrenamiento</h3></div>
+            <label class="switch-row"><input id="trainedYesterday" type="checkbox"><span>Entrené</span></label>
+          </div>
+
+          <div id="trainingFields" class="conditional hidden">
+            <div class="grid two">
+              <label>Tipo
+                <select id="trainingType"></select>
+              </label>
+              <label>Duración (min)
+                <input id="trainingMinutes" type="number" min="0" max="1440" value="0">
+              </label>
+              <label>RPE piernas
+                <div class="scale-control"><input id="rpeLegs" type="range" min="0" max="10" value="0"><output>0</output></div>
+              </label>
+              <label>RPE cardio
+                <div class="scale-control"><input id="rpeCardio" type="range" min="0" max="10" value="0"><output>0</output></div>
+              </label>
+            </div>
+          </div>
+        </article>
+
+        <article class="card form-card">
+          <div class="section-title split">
+            <div><span class="kicker">RUTINA</span><h3>Suplementación</h3></div>
+          </div>
+          <label class="choice-row">
+            <input type="radio" name="suppRoutine" value="yes" checked>
+            <span><strong>Rutina habitual completa</strong><small>No necesito detallar nada más</small></span>
+          </label>
+          <label class="choice-row">
+            <input type="radio" name="suppRoutine" value="no">
+            <span><strong>No fue completa</strong><small>Lo anoto en observaciones</small></span>
+          </label>
+        </article>
+
+        <article class="card form-card">
+          <label>Observaciones
+            <textarea id="notes" rows="4" placeholder="Solo si hay algo relevante"></textarea>
+          </label>
+        </article>
+
+        <button type="submit" class="primary save-button">Guardar registro</button>
+      </form>
     </section>
 
     <section id="calendar" class="screen">
       <div class="page-title"><div><span class="kicker">HISTORIAL</span><h2>Calendario</h2></div></div>
-      <article class="card empty-state">Todavía no hay registros.</article>
+      <article class="card">
+        <div class="calendar-head">
+          <button id="prevMonth" class="icon-button dark">‹</button>
+          <h3 id="calendarTitle"></h3>
+          <button id="nextMonth" class="icon-button dark">›</button>
+        </div>
+        <div class="weekdays"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+      </article>
+      <div id="dayDetail"></div>
     </section>
 
     <section id="stats" class="screen">
       <div class="page-title"><div><span class="kicker">ANÁLISIS</span><h2>Estadísticas</h2></div></div>
-      <article class="card empty-state">Las estadísticas aparecerán cuando empecemos a guardar datos.</article>
+      <article class="card">
+        <label>Periodo
+          <select id="statsPeriod">
+            <option value="7">7 días</option>
+            <option value="30" selected>30 días</option>
+            <option value="90">90 días</option>
+            <option value="all">Todo</option>
+          </select>
+        </label>
+      </article>
+      <div id="statsCards" class="metric-grid"></div>
+      <article class="card">
+        <span class="kicker">EVOLUCIÓN</span><h3>Inflamación y cansancio</h3>
+        <canvas id="statsChart" height="220"></canvas>
+      </article>
     </section>
 
     
