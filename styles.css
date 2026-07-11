@@ -60,3 +60,16 @@ main{max-width:820px;margin:auto;padding:16px 14px calc(100px + env(safe-area-in
   .config-item{grid-template-columns:26px 1fr auto auto auto}
   .button-row{flex-direction:column}
 }
+
+.brand-logo{
+  width:54px;
+  height:54px;
+  border-radius:16px;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+  object-fit:cover;
+  margin-right:12px;
+  flex:0 0 auto;
+}
+.topbar{
+  gap:12px;
+}

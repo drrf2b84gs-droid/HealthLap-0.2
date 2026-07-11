@@ -13,8 +13,9 @@ Aplicación PWA de seguimiento clínico-deportivo personal.
 - Almacenamiento local.
 
 
-## v0.2.1
-- Icono HealthLab de matraz + latido.
+## v0.2.2
+- Nuevo icono oficial HealthLab.
 - Iconos PWA 192 y 512 px.
-- Icono específico para iPhone/iPad.
+- Iconos iOS 180 y 120 px.
 - Favicon.
+- Logo visible en la cabecera.
