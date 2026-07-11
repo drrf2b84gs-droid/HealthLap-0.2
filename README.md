@@ -1,1 +1,13 @@
-# HealthLap-0.2
+# HealthLab
+
+Aplicación PWA de seguimiento clínico-deportivo personal.
+
+## v0.2
+- Identidad HealthLab.
+- Configuración dinámica de síntomas.
+- Configuración dinámica de suplementos y composición.
+- Medicación editable.
+- Tipos de entrenamiento editables.
+- Activar, ocultar, editar, eliminar y ordenar elementos.
+- Exportación e importación de configuración.
+- Almacenamiento local.

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>HealthLab</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">HEALTHLAB</p>
+      <h1 id="greeting">Buenos días, Luis</h1>
+      <p id="todayText" class="muted-light"></p>
+    </div>
+    <button id="themeToggle" class="icon-button" aria-label="Cambiar apariencia">◐</button>
+  </header>
+
+  <main>
+    <section id="home" class="screen active">
+      <div class="hero-card">
+        <div>
+          <span class="pill">Registro pendiente</span>
+          <h2>¿Cómo has amanecido?</h2>
+          <p>Un día normal debería llevar menos de 30 segundos.</p>
+        </div>
+        <button class="primary" data-go="record">Registrar ahora</button>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric-card">
+          <span>Inflamación</span><strong>0</strong><small>Hoy</small>
+        </article>
+        <article class="metric-card amber">
+          <span>Cansancio</span><strong>0</strong><small>Al despertar</small>
+        </article>
+      </div>
+
+      <article class="card">
+        <div class="section-title">
+          <div><span class="kicker">PRÓXIMAMENTE</span><h3>Resumen semanal</h3></div>
+        </div>
+        <div class="empty-state">Las tendencias aparecerán cuando haya varios registros.</div>
+      </article>
+    </section>
+
+    <section id="record" class="screen">
+      <div class="page-title">
+        <div><span class="kicker">REGISTRO</span><h2>Elige el nivel de detalle</h2></div>
+      </div>
+      <button class="choice-card">
+        <span class="choice-icon">⚡</span>
+        <span><strong>Registro rápido</strong><small>20–30 segundos</small></span>
+        <span>›</span>
+      </button>
+      <button class="choice-card">
+        <span class="choice-icon">✚</span>
+        <span><strong>Registro detallado</strong><small>Para brotes o días relevantes</small></span>
+        <span>›</span>
+      </button>
+      <article class="card">
+        <p class="muted">En la siguiente iteración conectaremos estos botones con los formularios configurables.</p>
+      </article>
+    </section>
+
+    <section id="calendar" class="screen">
+      <div class="page-title"><div><span class="kicker">HISTORIAL</span><h2>Calendario</h2></div></div>
+      <article class="card empty-state">Todavía no hay registros.</article>
+    </section>
+
+    <section id="stats" class="screen">
+      <div class="page-title"><div><span class="kicker">ANÁLISIS</span><h2>Estadísticas</h2></div></div>
+      <article class="card empty-state">Las estadísticas aparecerán cuando empecemos a guardar datos.</article>
+    </section>
+
+    
+<section id="settings" class="screen">
+  <div class="page-title">
+    <div><span class="kicker">PERSONALIZACIÓN</span><h2>Ajustes</h2></div>
+  </div>
+
+  <article class="card">
+    <div class="section-title split">
+      <div><span class="kicker">SÍNTOMAS</span><h3>Qué quieres registrar</h3></div>
+      <button class="small-button" data-add="symptoms">Añadir</button>
+    </div>
+    <div id="symptomsList" class="config-list"></div>
+  </article>
+
+  <article class="card">
+    <div class="section-title split">
+      <div><span class="kicker">SUPLEMENTOS</span><h3>Productos habituales</h3></div>
+      <button class="small-button" data-add="supplements">Añadir</button>
+    </div>
+    <div id="supplementsList" class="config-list"></div>
+  </article>
+
+  <article class="card">
+    <div class="section-title split">
+      <div><span class="kicker">MEDICACIÓN</span><h3>Tratamientos</h3></div>
+      <button class="small-button" data-add="medications">Añadir</button>
+    </div>
+    <div id="medicationsList" class="config-list"></div>
+  </article>
+
+  <article class="card">
+    <div class="section-title split">
+      <div><span class="kicker">ENTRENAMIENTOS</span><h3>Tipos disponibles</h3></div>
+      <button class="small-button" data-add="trainingTypes">Añadir</button>
+    </div>
+    <div id="trainingTypesList" class="config-list"></div>
+  </article>
+
+  <article class="card">
+    <span class="kicker">DATOS</span>
+    <h3>Almacenamiento</h3>
+    <p class="muted">Por ahora, los datos se guardan únicamente en este dispositivo.</p>
+    <div class="button-row">
+      <button id="exportConfig" class="secondary-button">Exportar configuración</button>
+      <label class="secondary-button file-label">Importar configuración
+        <input id="importConfig" type="file" accept=".json,application/json">
+      </label>
+      <button id="resetDemo" class="danger">Restablecer todo</button>
+    </div>
+  </article>
+</section>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-go="home"><span>⌂</span><small>Inicio</small></button>
+    <button class="nav-item" data-go="record"><span>＋</span><small>Registrar</small></button>
+    <button class="nav-item" data-go="calendar"><span>▦</span><small>Calendario</small></button>
+    <button class="nav-item" data-go="stats"><span>⌁</span><small>Estadísticas</small></button>
+    <button class="nav-item" data-go="settings"><span>⚙</span><small>Ajustes</small></button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
