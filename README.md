@@ -11,3 +11,10 @@ Aplicación PWA de seguimiento clínico-deportivo personal.
 - Activar, ocultar, editar, eliminar y ordenar elementos.
 - Exportación e importación de configuración.
 - Almacenamiento local.
+
+
+## v0.2.1
+- Icono HealthLab de matraz + latido.
+- Iconos PWA 192 y 512 px.
+- Icono específico para iPhone/iPad.
+- Favicon.
