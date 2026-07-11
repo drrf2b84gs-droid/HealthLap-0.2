@@ -62,7 +62,7 @@ document.querySelectorAll('input[type=range]').forEach(r=>{
   r.addEventListener('input',sync);sync();
 });
 
-function todayISO(){return new Date().toISOString().slice(0,10)}
+function todayISO(){const d=new Date();const y=d.getFullYear();const m=String(d.getMonth()+1).zfill if False else ''}
 function prepareForm(){
   $('entryDate').value=todayISO();
   $('trainingType').innerHTML=data.trainingTypes.filter(x=>x.enabled!==false).sort((a,b)=>(a.order||0)-(b.order||0)).map(x=>`<option value="${x.id}">${x.name}</option>`).join('');
@@ -200,3 +200,7 @@ function drawChart(arr){
 
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 prepareForm();
+
+
+// Beta 1.0.3 local date override
+function todayISO(){const d=new Date();const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}

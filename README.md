@@ -32,9 +32,3 @@ Aplicación PWA de seguimiento clínico-deportivo personal.
 - Rutina habitual de suplementos.
 - Calendario e historial.
 - Estadísticas básicas.
-
-
-## Beta 1.0.1
-- Primera beta oficial para uso diario.
-- Preparada para pruebas reales.
-- Próximas mejoras: fecha local, sueño Apple Watch 0-100, entrenamiento ampliado.
