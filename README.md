@@ -1,9 +1,15 @@
-# HealthLab Beta 1.0.0
+# HealthLab Beta 1.0.1
 
-Primera versión reconstruida sobre un modelo estable y utilizable a diario.
+Base visual: interfaz HealthLab v0.3.
 
-## Instalación en GitHub Pages
-Sube todos los archivos a la raíz del repositorio y activa GitHub Pages desde la rama `main` y `/ (root)`.
+Cambios principales:
+- Fecha local.
+- Sueño Apple 0–100 y horario habitual.
+- Entrenamiento adaptativo por deporte.
+- Competición como interruptor.
+- Suplementación diaria separada de nutrición deportiva.
+- Dosis, unidades y composición configurables.
+- Calendario con detalle completo del entrenamiento.
+- Exportación e importación completa.
 
-## Datos
-Los datos se guardan localmente en cada dispositivo. Para pasar del iPad al iPhone, exporta una copia JSON en el iPad e impórtala en el iPhone.
+Los datos siguen guardándose localmente en cada dispositivo.
