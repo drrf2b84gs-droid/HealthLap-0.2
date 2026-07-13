@@ -1,243 +1,76 @@
-'use strict';
-const STORAGE_KEY='healthLabData';
-const THEME_KEY='healthLabTheme';
+const DATA_KEY='healthlabEntriesV100';
+const SETTINGS_KEY='healthlabSettingsV100';
 const $=id=>document.getElementById(id);
-const clone=v=>JSON.parse(JSON.stringify(v));
-const uid=prefix=>`${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
-
-const defaults={
-  schemaVersion:4,
-  appVersion:'1.0-rc1',
-  profile:{name:'Luis'},
-  supplements:[
-    {id:'multi',name:'Multivitamínico',emoji:'💊',category:'health',enabled:true,order:1},
-    {id:'omega3',name:'Omega-3',emoji:'🐟',category:'health',enabled:true,order:2},
-    {id:'magnesium',name:'Magnesio',emoji:'🌙',category:'health',enabled:true,order:3},
-    {id:'coq10',name:'CoQ10',emoji:'⚡',category:'health',enabled:true,order:4},
-    {id:'creatine',name:'Creatina',emoji:'🏋️',category:'sport',enabled:true,order:5},
-    {id:'whey',name:'Proteína whey',emoji:'🥛',category:'sport',enabled:true,order:6}
-  ],
-  medications:[
-    {id:'hidroferol',name:'Hidroferol',emoji:'☀️',category:'health',enabled:true,order:1}
-  ],
-  trainingTypes:[
-    {id:'run',name:'Carrera',emoji:'🏃',enabled:true,order:1,system:true},
-    {id:'bike',name:'Bici / spinning',emoji:'🚴',enabled:true,order:2,system:true},
-    {id:'strength',name:'Fuerza',emoji:'🏋️',enabled:true,order:3,system:true},
-    {id:'mobility',name:'Movilidad / yoga',emoji:'🧘',enabled:true,order:4,system:true},
-    {id:'trekking',name:'Trekking / senderismo',emoji:'🥾',enabled:true,order:5,system:true},
-    {id:'other',name:'Otros',emoji:'⚽',enabled:true,order:6,system:true}
-  ],
-  entries:[],events:[]
+let deferredPrompt=null, photoData='';
+const defaultSettings={
+ training:[
+  {id:'run',name:'Carrera',icon:'🏃',enabled:true},
+  {id:'bike',name:'Bici / spinning',icon:'🚴',enabled:true},
+  {id:'strength',name:'Fuerza',icon:'🏋️',enabled:true},
+  {id:'mobility',name:'Movilidad / yoga',icon:'🧘',enabled:true},
+  {id:'trekking',name:'Trekking / senderismo',icon:'🥾',enabled:true},
+  {id:'other',name:'Otros',icon:'⚽',enabled:true}
+ ],
+ daily:[
+  {id:'multi',name:'Multivitamínico',dose:2,unit:'cápsulas',composition:'Vitaminas y minerales',enabled:true},
+  {id:'omega3',name:'Omega-3',dose:1,unit:'cápsula',composition:'EPA 540 mg + DHA 360 mg',enabled:true},
+  {id:'magnesium',name:'Magnesio',dose:1,unit:'cápsula',composition:'175 mg de magnesio',enabled:true},
+  {id:'coq10',name:'CoQ10',dose:1,unit:'cápsula',composition:'',enabled:true},
+  {id:'vitd',name:'Vitamina D',dose:1,unit:'dosis',composition:'Hidroferol',enabled:true}
+ ],
+ sport:[
+  {id:'protein',name:'Proteína',dose:25,unit:'g',composition:'',enabled:true},
+  {id:'creatine',name:'Creatina',dose:5,unit:'g',composition:'',enabled:true},
+  {id:'caffeine',name:'Cafeína',dose:0,unit:'mg',composition:'',enabled:true},
+  {id:'carbsBefore',name:'CH antes',dose:0,unit:'g',composition:'',enabled:true},
+  {id:'carbsDuring',name:'CH durante',dose:0,unit:'g',composition:'',enabled:true},
+  {id:'carbsAfter',name:'CH después',dose:0,unit:'g',composition:'',enabled:true}
+ ],
+ meds:[]
 };
-
-function migrate(raw){
-  const d={...clone(defaults),...raw};
-  d.entries=Array.isArray(raw?.entries)?raw.entries:[];
-  d.supplements=Array.isArray(raw?.supplements)&&raw.supplements.length?raw.supplements:clone(defaults.supplements);
-  d.medications=Array.isArray(raw?.medications)&&raw.medications.length?raw.medications:clone(defaults.medications);
-  const validTrainingIds=new Set(defaults.trainingTypes.map(x=>x.id));
-  const old=Array.isArray(raw?.trainingTypes)?raw.trainingTypes:[];
-  const hasNew=old.some(x=>validTrainingIds.has(x.id));
-  d.trainingTypes=hasNew?old:clone(defaults.trainingTypes);
-  d.schemaVersion=4;d.appVersion='1.0-rc1';
-  return d;
-}
-function loadData(){
-  try{const raw=localStorage.getItem(STORAGE_KEY);if(raw)return migrate(JSON.parse(raw));}catch(err){console.error(err)}
-  return clone(defaults);
-}
-let data=loadData();
-function saveData(){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
-saveData();
-
-function localISO(date=new Date()){
-  const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
-  return `${y}-${m}-${d}`;
-}
-function num(id){const el=$(id);return el&&el.value!==''?Number(el.value):0}
-function str(id){return ($(id)?.value||'').trim()}
-function checkedValues(container){return [...container.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value)}
-function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-
-function go(screen){
-  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.go===screen));
-  $(screen).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});
-  if(screen==='record')prepareForm();if(screen==='calendar')renderCalendar();if(screen==='stats')renderStats();if(screen==='settings')renderSettings();
-}
-document.querySelectorAll('[data-go]').forEach(btn=>btn.addEventListener('click',()=>go(btn.dataset.go)));
-
-const now=new Date();
-$('todayText').textContent=new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long'}).format(now);
-function applyTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem(THEME_KEY,theme)}
-applyTheme(localStorage.getItem(THEME_KEY)||'light');
-$('themeToggle').onclick=()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
-
-function syncRanges(){
-  document.querySelectorAll('input[type=range]').forEach(r=>{
-    const out=r.parentElement.querySelector('output');
-    const sync=()=>{if(out)out.textContent=r.value};
-    if(!r.dataset.bound){r.addEventListener('input',sync);r.dataset.bound='1'}
-    sync();
-  });
-}
-syncRanges();
-
-function compressImage(file){
-  if(!file)return Promise.resolve('');
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader(),img=new Image();
-    reader.onload=e=>img.src=e.target.result;reader.onerror=reject;
-    img.onload=()=>{const max=1100,scale=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.72))};
-    reader.readAsDataURL(file);
-  });
-}
-
-function renderDailyItems(){
-  const build=(items,title)=>{
-    const enabled=items.filter(x=>x.enabled!==false).sort((a,b)=>(a.order||0)-(b.order||0));
-    if(!enabled.length)return '';
-    return `<h4>${title}</h4><div class="check-grid">${enabled.map(x=>`<label class="check-chip"><input type="checkbox" value="${escapeHtml(x.id)}" checked><span>${escapeHtml(x.emoji||'')} ${escapeHtml(x.name)}</span></label>`).join('')}</div>`;
-  };
-  $('dailySupplements').innerHTML=build(data.supplements,'Suplementos tomados');
-  $('dailyMedications').innerHTML=build(data.medications,'Medicación tomada');
-}
-function prepareForm(){
-  if(!$('entryDate').value)$('entryDate').value=localISO();
-  const types=data.trainingTypes.filter(x=>x.enabled!==false).sort((a,b)=>(a.order||0)-(b.order||0));
-  $('trainingType').innerHTML=types.map(x=>`<option value="${escapeHtml(x.id)}">${escapeHtml(x.emoji||'')} ${escapeHtml(x.name)}</option>`).join('');
-  renderDailyItems();updateTrainingFields();
-}
-
-$('usualSleepSchedule').onchange=()=>$('sleepExceptionFields').classList.toggle('hidden',$('usualSleepSchedule').checked);
-$('trainedYesterday').onchange=()=>{
-  $('trainingFields').classList.toggle('hidden',!$('trainedYesterday').checked);
-  if($('trainedYesterday').checked)updateTrainingFields();
-};
-$('trainingType').onchange=updateTrainingFields;
-function updateTrainingFields(){
-  document.querySelectorAll('.training-specific').forEach(x=>x.classList.add('hidden'));
-  const id=$('trainingType').value;
-  if(id==='run')$('runningFields').classList.remove('hidden');
-  else if(id==='bike')$('bikeFields').classList.remove('hidden');
-  else if(id==='trekking')$('trekkingFields').classList.remove('hidden');
-  else if(id==='strength'||id==='other')$('simpleRpeFields').classList.remove('hidden');
-  // mobility deliberately has only duration + notes
-}
-['handSwelling','handPain','handStiffness','peeling'].forEach(id=>$(id).addEventListener('input',()=>{
-  const abnormal=['handSwelling','handPain','handStiffness','peeling'].some(k=>num(k)>0);
-  $('symptomDetail').classList.toggle('hidden',!abnormal);
-}));
-
-function duration(prefix='duration'){
-  return {hours:num(prefix+'Hours'),minutes:num(prefix+'Minutes'),seconds:num(prefix+'Seconds')};
-}
-function commonTraining(){return {duration:duration(),competition:$('isCompetition').checked,notes:str('trainingNotes')}}
-function collectTraining(){
-  if(!$('trainedYesterday').checked)return {trained:false,type:'rest'};
-  const type=$('trainingType').value;const base={trained:true,type,...commonTraining()};
-  if(type==='run')return {...base,terrain:str('runningTerrain'),distanceKm:num('distanceKm'),elevationGain:num('elevationGain'),elevationLoss:num('elevationLoss'),pace:{minutes:num('paceMinutes'),seconds:num('paceSeconds')},tss:{type:str('tssType')||'hrTSS',value:num('tssValue')},intensityFactor:num('intensityFactor'),rpeGlobal:num('rpeGlobal'),rpeLegs:num('rpeLegs'),rpeCardio:num('rpeCardio')};
-  if(type==='bike')return {...base,distanceKm:num('bikeDistanceKm'),avgPower:num('avgPower'),avgCadence:num('avgCadence'),tss:{type:str('bikeTssType')||'hrTSS',value:num('bikeTssValue')},intensityFactor:num('bikeIntensityFactor'),rpeGlobal:num('bikeRpeGlobal'),rpeLegs:num('bikeRpeLegs'),rpeCardio:num('bikeRpeCardio')};
-  if(type==='trekking')return {...base,distanceKm:num('trekDistanceKm'),elevationGain:num('trekElevationGain'),elevationLoss:num('trekElevationLoss'),rpeGlobal:num('trekRpeGlobal')};
-  if(type==='strength'||type==='other')return {...base,rpeGlobal:num('simpleRpeGlobal')};
-  return base;
-}
-
-$('quickForm').onsubmit=async e=>{
-  e.preventDefault();
-  const date=$('entryDate').value||localISO();
-  const photo=await compressImage($('symptomPhoto').files[0]);
-  const existing=data.entries.find(x=>x.date===date);
-  const entry={
-    id:existing?.id||Date.now(),date,updatedAt:new Date().toISOString(),
-    sleep:{score:num('sleepScore'),hours:num('sleepHours'),minutes:num('sleepMinutes'),usualSchedule:$('usualSleepSchedule').checked,exceptionType:$('usualSleepSchedule').checked?'':str('sleepExceptionType'),notes:$('usualSleepSchedule').checked?'':str('sleepNotes')},
-    symptoms:{fatigue:num('fatigue'),legFatigue:num('legFatigue'),handSwelling:num('handSwelling'),handPain:num('handPain'),handStiffness:num('handStiffness'),peeling:num('peeling'),notes:str('symptomNotes'),photo:photo||existing?.symptoms?.photo||''},
-    training:collectTraining(),
-    supplements:checkedValues($('dailySupplements')),
-    medications:checkedValues($('dailyMedications')),
-    notes:str('notes')
-  };
-  if(existing&&!confirm('Ya hay un registro para esa fecha. ¿Sustituirlo?'))return;
-  data.entries=data.entries.filter(x=>x.date!==date);data.entries.push(entry);data.entries.sort((a,b)=>a.date.localeCompare(b.date));saveData();
-  alert('Registro guardado.');resetForm();updateHome();go('home');
-};
-function resetForm(){
-  $('quickForm').reset();$('entryDate').value=localISO();$('usualSleepSchedule').checked=true;$('sleepExceptionFields').classList.add('hidden');$('trainingFields').classList.add('hidden');$('symptomDetail').classList.add('hidden');
-  document.querySelectorAll('input[type=range]').forEach(r=>{r.value=0;r.dispatchEvent(new Event('input'))});renderDailyItems();
-}
-
-function entryValue(e,key){return e.symptoms?.[key]??e[key]??0}
-function updateHome(){
-  const e=data.entries.find(x=>x.date===localISO());const cards=document.querySelectorAll('.metric-card strong');
-  if(cards[0])cards[0].textContent=e?entryValue(e,'handSwelling'):0;if(cards[1])cards[1].textContent=e?entryValue(e,'fatigue'):0;
-  const pill=document.querySelector('.hero-card .pill');if(pill)pill.textContent=e?'Registro completado':'Registro pendiente';
-}
-updateHome();
-
-let calendarDate=new Date();
-$('prevMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar()};
-$('nextMonth').onclick=()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar()};
-function renderCalendar(){
-  const year=calendarDate.getFullYear(),month=calendarDate.getMonth();$('calendarTitle').textContent=new Intl.DateTimeFormat('es-ES',{month:'long',year:'numeric'}).format(calendarDate);
-  const first=new Date(year,month,1),last=new Date(year,month+1,0),start=(first.getDay()+6)%7,cells=[];
-  for(let i=0;i<start;i++)cells.push('<div class="day empty"></div>');
-  for(let d=1;d<=last.getDate();d++){
-    const iso=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,e=data.entries.find(x=>x.date===iso);let severity=0;
-    if(e){const max=Math.max(entryValue(e,'handSwelling'),entryValue(e,'handPain'),entryValue(e,'handStiffness'),entryValue(e,'fatigue'),entryValue(e,'legFatigue'));severity=max>=7?3:max>=4?2:1}
-    cells.push(`<button class="day ${e?'has-entry severity-'+severity:''}${iso===localISO()?' today':''}" data-date="${iso}">${d}${e?'<span class="day-dot"></span>':''}</button>`);
-  }
-  $('calendarGrid').innerHTML=cells.join('');document.querySelectorAll('.day[data-date]').forEach(b=>b.onclick=()=>showDay(b.dataset.date));
-}
-function fmtDuration(d){if(!d)return '0 min';const parts=[];if(d.hours)parts.push(`${d.hours} h`);if(d.minutes)parts.push(`${d.minutes} min`);if(d.seconds)parts.push(`${d.seconds} s`);return parts.join(' ')||'0 min'}
-function trainingName(id){const t=data.trainingTypes.find(x=>x.id===id);return t?`${t.emoji||''} ${t.name}`.trim():id}
-function trainingSummary(t){
-  if(!t?.trained)return '😴 Descanso';
-  const bits=[trainingName(t.type),fmtDuration(t.duration)];
-  if(t.distanceKm)bits.push(`${t.distanceKm} km`);if(t.elevationGain)bits.push(`+${t.elevationGain} m`);if(t.tss?.value)bits.push(`${t.tss.value} ${t.tss.type}`);if(t.competition)bits.push('🏁 Competición');return bits.join(' · ');
-}
-function showDay(date){
-  const e=data.entries.find(x=>x.date===date);if(!e){$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>${formatDate(date)}</strong><p class="muted">Sin registro.</p></div>`;return}
-  const s=e.sleep||{},sy=e.symptoms||e;
-  $('dayDetail').innerHTML=`<div class="day-detail-card"><strong>${formatDate(date)}</strong>
-    <p>😴 Sueño: ${s.score??e.sleepQuality??0}/100 · ${s.hours||0} h ${s.minutes||0} min${s.usualSchedule===false?' · horario no habitual':''}</p>
-    <p>🤲 Inflamación ${sy.handSwelling||0}/10 · Dolor ${sy.handPain||0}/10 · Rigidez ${sy.handStiffness||0}/10 · Descamación ${sy.peeling||0}/3</p>
-    <p>🔋 Cansancio ${sy.fatigue||0}/10 · Piernas ${sy.legFatigue||0}/10</p>
-    <p>🏃 ${escapeHtml(trainingSummary(e.training||legacyTraining(e)))}</p>
-    ${e.training?.notes?`<p><b>Entrenamiento:</b> ${escapeHtml(e.training.notes)}</p>`:''}
-    ${sy.notes?`<p><b>Síntomas:</b> ${escapeHtml(sy.notes)}</p>`:''}${e.notes?`<p><b>Observaciones:</b> ${escapeHtml(e.notes)}</p>`:''}
-    ${sy.photo?`<img class="history-photo" src="${sy.photo}" alt="Foto del registro">`:''}
-    <button class="danger" onclick="deleteEntry('${date}')">Eliminar</button></div>`;
-}
-function legacyTraining(e){return {trained:e.trainedYesterday,type:e.trainingType,duration:{hours:0,minutes:e.trainingMinutes||0,seconds:0},rpeLegs:e.rpeLegs,rpeCardio:e.rpeCardio}}
-function deleteEntry(date){if(confirm('¿Eliminar este registro?')){data.entries=data.entries.filter(x=>x.date!==date);saveData();renderCalendar();$('dayDetail').innerHTML='';updateHome()}}
-function formatDate(d){return new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(d+'T12:00:00'))}
-
-$('statsPeriod').onchange=renderStats;
-function filteredEntries(){const p=$('statsPeriod').value;if(p==='all')return [...data.entries];const cut=new Date();cut.setHours(0,0,0,0);cut.setDate(cut.getDate()-(Number(p)-1));return data.entries.filter(e=>new Date(e.date+'T12:00:00')>=cut)}
-function avg(arr,key){return arr.length?(arr.reduce((s,e)=>s+Number(entryValue(e,key)||0),0)/arr.length).toFixed(1):'—'}
-function renderStats(){const arr=filteredEntries().sort((a,b)=>a.date.localeCompare(b.date));const cards=[['Días registrados',arr.length],['Inflamación media',avg(arr,'handSwelling')],['Cansancio medio',avg(arr,'fatigue')],['Días con descamación',arr.filter(e=>entryValue(e,'peeling')>0).length]];$('statsCards').innerHTML=cards.map(([l,v])=>`<article class="stat-card"><span>${l}</span><strong>${v}</strong></article>`).join('');drawChart(arr)}
-function drawChart(arr){const c=$('statsChart'),ctx=c.getContext('2d'),dpr=devicePixelRatio||1,w=c.clientWidth||700,h=220;c.width=w*dpr;c.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.strokeStyle='#dfe8e8';ctx.lineWidth=1;for(let i=0;i<=5;i++){const y=20+i*(h-40)/5;ctx.beginPath();ctx.moveTo(28,y);ctx.lineTo(w-8,y);ctx.stroke()}if(!arr.length){ctx.fillStyle='#74868b';ctx.fillText('Sin datos',w/2-20,h/2);return}const plot=(key,color)=>{ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();arr.forEach((e,i)=>{const x=30+i*(w-44)/Math.max(1,arr.length-1),y=h-20-(Number(entryValue(e,key)||0)/10)*(h-40);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()};plot('handSwelling','#0f766e');plot('fatigue','#d99a24')}
-
-let modalState={type:null,id:null};
-function renderSettings(){renderConfigList('supplements');renderConfigList('medications');renderConfigList('trainingTypes')}
-function renderConfigList(type){
-  const target=$(type+'List'),items=data[type].slice().sort((a,b)=>(a.order||0)-(b.order||0));
-  target.innerHTML=items.length?items.map((x,i)=>`<div class="config-item"><span class="config-grip">↕</span><div class="config-main"><strong>${escapeHtml(x.emoji||'')} ${escapeHtml(x.name)}</strong><small>${type==='trainingTypes'?'Tipo de entrenamiento':escapeHtml(x.category||'')}</small></div><button type="button" class="config-toggle ${x.enabled!==false?'on':''}" data-action="toggle" data-type="${type}" data-id="${x.id}" aria-label="Activar o desactivar"></button><button type="button" class="icon-mini" data-action="up" data-type="${type}" data-id="${x.id}" ${i===0?'disabled':''}>↑</button><button type="button" class="icon-mini" data-action="edit" data-type="${type}" data-id="${x.id}">✎</button><button type="button" class="icon-mini danger-text" data-action="delete" data-type="${type}" data-id="${x.id}">×</button></div>`).join(''):'<div class="empty-config">No hay elementos.</div>';
-}
-document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openModal(b.dataset.add));
-$('settings').addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;configAction(b.dataset.action,b.dataset.type,b.dataset.id)});
-function configAction(action,type,id){const arr=data[type],idx=arr.findIndex(x=>x.id===id);if(idx<0)return;if(action==='toggle')arr[idx].enabled=arr[idx].enabled===false;else if(action==='up'&&idx>0){[arr[idx-1],arr[idx]]=[arr[idx],arr[idx-1]];arr.forEach((x,i)=>x.order=i+1)}else if(action==='edit'){openModal(type,id);return}else if(action==='delete'){if(!confirm('¿Eliminar este elemento?'))return;arr.splice(idx,1)}saveData();renderSettings();prepareForm()}
-function openModal(type,id=null){modalState={type,id};const item=id?data[type].find(x=>x.id===id):null;$('modalTitle').textContent=item?'Editar elemento':'Añadir elemento';$('configName').value=item?.name||'';$('configEmoji').value=item?.emoji||'';$('configCategory').value=item?.category||'health';$('configCategoryLabel').classList.toggle('hidden',type==='trainingTypes');$('configModal').classList.add('open');$('configModal').setAttribute('aria-hidden','false')}
-function closeModal(){$('configModal').classList.remove('open');$('configModal').setAttribute('aria-hidden','true')}
-$('modalCancel').onclick=closeModal;
-$('modalSave').onclick=()=>{const {type,id}=modalState,name=str('configName'),emoji=str('configEmoji');if(!name)return alert('Escribe un nombre.');const arr=data[type];if(id){const item=arr.find(x=>x.id===id);Object.assign(item,{name,emoji,category:type==='trainingTypes'?'':str('configCategory')})}else arr.push({id:uid(type),name,emoji,category:type==='trainingTypes'?'':str('configCategory'),enabled:true,order:arr.length+1});saveData();closeModal();renderSettings();prepareForm()};
-$('configModal').onclick=e=>{if(e.target===$('configModal'))closeModal()};
-
-function downloadBlob(content,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-$('exportAll').onclick=()=>downloadBlob(JSON.stringify({...data,exportedAt:new Date().toISOString()},null,2),`healthlab_backup_${localISO()}.json`,'application/json');
-$('importAll').onchange=async e=>{try{const raw=JSON.parse(await e.target.files[0].text());if(!raw||!Array.isArray(raw.entries))throw new Error();if(confirm('Esto sustituirá los datos y la configuración actuales. ¿Continuar?')){data=migrate(raw);saveData();renderSettings();prepareForm();updateHome();alert('Copia importada.')}}catch{alert('El archivo no es una copia válida de HealthLab.')}finally{e.target.value=''}};
-$('resetDemo').onclick=()=>{if(confirm('¿Restablecer HealthLab? Se borrarán todos los registros y ajustes.')){data=clone(defaults);saveData();renderSettings();prepareForm();updateHome();alert('HealthLab restablecido.')}};
-
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-prepareForm();renderSettings();
+function clone(x){return JSON.parse(JSON.stringify(x))}
+function loadEntries(){try{return JSON.parse(localStorage.getItem(DATA_KEY)||'[]')}catch{return []}}
+function saveEntries(v){localStorage.setItem(DATA_KEY,JSON.stringify(v))}
+function loadSettings(){try{return {...clone(defaultSettings),...JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')}}catch{return clone(defaultSettings)}}
+function saveSettings(v){localStorage.setItem(SETTINGS_KEY,JSON.stringify(v))}
+function localDateISO(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
+function nowTime(){const d=new Date();return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function val(id){return $(id)?.value??''} function num(id){const v=val(id);return v===''?0:Number(v)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function bindRanges(){document.querySelectorAll('input[type=range]').forEach(r=>{const out=document.querySelector(`output[for="${r.id}"]`);const sync=()=>{if(out)out.value=r.value};r.oninput=sync;sync()})}
+function durationSeconds(prefix){return num(prefix+'H')*3600+num(prefix+'M')*60+num(prefix+'S')}
+function fmtDuration(sec){sec=Number(sec||0);const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;return [h?`${h} h`:'',m?`${m} min`:'',s?`${s} s`:''].filter(Boolean).join(' ')||'0 min'}
+function durationFields(prefix){return `<label>Duración<div class="duration"><input id="${prefix}H" type="number" min="0" placeholder="h"><span>h</span><input id="${prefix}M" type="number" min="0" max="59" placeholder="min"><span>min</span><input id="${prefix}S" type="number" min="0" max="59" placeholder="s"><span>s</span></div></label>`}
+function rpeFields(){return `<label>RPE global (0–10)<input id="rpeGlobal" type="number" min="0" max="10"></label><label>RPE piernas (0–10)<input id="rpeLegs" type="number" min="0" max="10"></label><label>RPE cardio (0–10)<input id="rpeCardio" type="number" min="0" max="10"></label>`}
+function tssFields(){return `<label>Carga TSS<input id="tssValue" type="number" min="0" step="0.1"></label><label>Tipo TSS<select id="tssType"><option value="hrTSS" selected>hrTSS</option><option value="TSS">TSS</option><option value="rTSS">rTSS</option><option value="otro">Otro</option></select></label><label>IF<input id="ifValue" type="number" min="0" step="0.01" placeholder="0.78"></label>`}
+function renderTrainingTypes(){const settings=loadSettings();$('trainingType').innerHTML=settings.training.filter(x=>x.enabled).map(x=>`<option value="${esc(x.id)}">${esc(x.icon)} ${esc(x.name)}</option>`).join('');renderTrainingFields()}
+function renderTrainingFields(){if(!$('trained').checked)return;const type=val('trainingType');let html='<div class="training-grid">';
+ if(type==='run')html+=durationFields('train')+`<label>Terreno<select id="terrain"><option>Asfalto</option><option>Pista</option><option>Camino</option><option>Montaña</option><option>Mixto</option></select></label><label>Distancia (km)<input id="distanceKm" type="number" min="0" step="0.01"></label><label>Desnivel + (m)<input id="elevationGain" type="number" min="0"></label><label>Desnivel − (m)<input id="elevationLoss" type="number" min="0"></label><label>Ritmo medio<div class="duration compact"><input id="paceM" type="number" min="0" placeholder="min"><span>min</span><input id="paceS" type="number" min="0" max="59" placeholder="s"><span>/km</span></div></label>`+tssFields()+rpeFields();
+ else if(type==='bike')html+=durationFields('train')+`<label>Distancia (km, opcional)<input id="distanceKm" type="number" min="0" step="0.01"></label><label>Potencia media (W)<input id="avgPower" type="number" min="0"></label><label>Cadencia media (rpm)<input id="avgCadence" type="number" min="0"></label>`+tssFields()+rpeFields();
+ else if(type==='strength')html+=durationFields('train')+`<label>Tipo / foco<input id="strengthFocus" placeholder="Pierna, torso, isométricos..."></label><label>RPE global (0–10)<input id="rpeGlobal" type="number" min="0" max="10"></label>`;
+ else if(type==='mobility')html+=durationFields('train')+`<label>Tipo<input id="mobilityType" placeholder="Yoga, movilidad, estiramientos..."></label>`;
+ else if(type==='trekking')html+=durationFields('train')+`<label>Distancia (km)<input id="distanceKm" type="number" min="0" step="0.01"></label><label>Desnivel + (m)<input id="elevationGain" type="number" min="0"></label><label>Desnivel − (m)<input id="elevationLoss" type="number" min="0"></label><label>RPE global (0–10)<input id="rpeGlobal" type="number" min="0" max="10"></label>`;
+ else html+=durationFields('train')+`<label>RPE global (0–10)<input id="rpeGlobal" type="number" min="0" max="10"></label>`;
+ html+=`<label class="full">Comentario del entrenamiento<textarea id="trainingComment" rows="3" placeholder="Sensaciones, dolor, motivo del RPE, incidencias..."></textarea></label></div>`;$('trainingFields').innerHTML=html}
+function collectTraining(){if(!$('trained').checked)return null;const s=loadSettings(),type=val('trainingType'),def=s.training.find(x=>x.id===type);return {type,typeName:def?.name||type,icon:def?.icon||'',competition:$('competition').checked,durationSec:durationSeconds('train'),terrain:val('terrain'),distanceKm:num('distanceKm'),elevationGain:num('elevationGain'),elevationLoss:num('elevationLoss'),paceSec:num('paceM')*60+num('paceS'),tssValue:num('tssValue'),tssType:val('tssType')||'hrTSS',ifValue:num('ifValue'),rpeGlobal:num('rpeGlobal'),rpeLegs:num('rpeLegs'),rpeCardio:num('rpeCardio'),avgPower:num('avgPower'),avgCadence:num('avgCadence'),strengthFocus:val('strengthFocus'),mobilityType:val('mobilityType'),comment:val('trainingComment')}}
+function setTraining(t){$('trained').checked=!!t;$('trainingBlock').classList.toggle('hidden',!t);if(!t)return;renderTrainingTypes();$('trainingType').value=t.type;renderTrainingFields();$('competition').checked=!!t.competition;const map={terrain:t.terrain,distanceKm:t.distanceKm,elevationGain:t.elevationGain,elevationLoss:t.elevationLoss,paceM:Math.floor((t.paceSec||0)/60),paceS:(t.paceSec||0)%60,tssValue:t.tssValue,tssType:t.tssType,ifValue:t.ifValue,rpeGlobal:t.rpeGlobal,rpeLegs:t.rpeLegs,rpeCardio:t.rpeCardio,avgPower:t.avgPower,avgCadence:t.avgCadence,strengthFocus:t.strengthFocus,mobilityType:t.mobilityType,trainingComment:t.comment,trainH:Math.floor((t.durationSec||0)/3600),trainM:Math.floor(((t.durationSec||0)%3600)/60),trainS:(t.durationSec||0)%60};Object.entries(map).forEach(([k,v])=>{if($(k))$(k).value=v??''})}
+function renderCheckLists(){const s=loadSettings();for(const [key,target] of [['daily','dailySupplements'],['sport','sportSupplements'],['meds','medicationList']]){$(target).innerHTML=s[key].filter(x=>x.enabled).map(x=>`<div class="check-item"><input type="checkbox" data-group="${key}" data-id="${x.id}"><div><strong>${esc(x.name)}</strong><div class="meta">${esc(x.composition||'')} ${x.dose!==''?`· habitual: ${esc(x.dose)} ${esc(x.unit)}`:''}</div></div><input type="number" step="0.01" data-amount="${key}:${x.id}" value="${esc(x.dose)}" aria-label="Cantidad"></div>`).join('')||'<p class="muted">Sin elementos configurados.</p>'}}
+function collectItems(group){return [...document.querySelectorAll(`[data-group="${group}"]`)].filter(x=>x.checked).map(x=>{const id=x.dataset.id,amount=document.querySelector(`[data-amount="${group}:${id}"]`)?.value||'';const item=loadSettings()[group].find(i=>i.id===id);return {id,name:item?.name||id,amount:Number(amount||0),unit:item?.unit||'',composition:item?.composition||''}})}
+function setItems(group,items=[]){items.forEach(it=>{const c=document.querySelector(`[data-group="${group}"][data-id="${it.id}"]`),a=document.querySelector(`[data-amount="${group}:${it.id}"]`);if(c)c.checked=true;if(a)a.value=it.amount??''})}
+function renderJoints(){const joints=['Pulgar D','Índice D','Corazón D','Anular D','Meñique D','Muñeca D','Pulgar I','Índice I','Corazón I','Anular I','Meñique I','Muñeca I'];$('jointChips').innerHTML=joints.map(j=>`<label><input type="checkbox" value="${j}"><span>${j}</span></label>`).join('')}
+async function compressImage(file){if(!file)return photoData||'';return new Promise((resolve,reject)=>{const r=new FileReader(),img=new Image();r.onload=e=>img.src=e.target.result;r.onerror=reject;img.onload=()=>{const max=1000,scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.7))};r.readAsDataURL(file)})}
+function adaptive(){const hand=num('handSwelling')>0||num('handPain')>0||num('handClosure')>0;$('handDetail').classList.toggle('hidden',!hand);$('skinDetail').classList.toggle('hidden',!(num('peeling')>0||num('itch')>0));$('scheduleDetail').classList.toggle('hidden',$('usualSchedule').checked);$('trainingBlock').classList.toggle('hidden',!$('trained').checked)}
+function redFlags(e){const a=[];if(e.health.handSwelling>=7)a.push('inflamación intensa');if(e.health.handPain>=8)a.push('dolor articular muy alto');if(e.health.handClosure>=7)a.push('limitación marcada');if(e.health.infection==='intenso')a.push('malestar intenso');return a}
+$('entryForm').onsubmit=async ev=>{ev.preventDefault();const photo=await compressImage($('photo').files[0]);const entry={schemaVersion:100,id:val('editingId')||crypto.randomUUID(),date:val('date'),time:val('time'),updatedAt:new Date().toISOString(),sleep:{hours:num('sleepHours'),minutes:num('sleepMinutes'),score:num('sleepScore'),usualSchedule:$('usualSchedule').checked,scheduleReason:val('scheduleReason'),comment:val('sleepComment')},health:{fatigue:num('fatigue'),musclePain:num('musclePain'),bodyStiffness:num('bodyStiffness'),cardio:num('cardio'),stress:num('stress'),infection:val('infection'),handSwelling:num('handSwelling'),handPain:num('handPain'),handClosure:num('handClosure'),morningStiffness:val('morningStiffness'),joints:[...document.querySelectorAll('#jointChips input:checked')].map(x=>x.value),jointNotes:val('jointNotes'),peeling:num('peeling'),itch:num('itch'),skinNotes:val('skinNotes'),photo},training:collectTraining(),dailySupplements:collectItems('daily'),sportSupplements:collectItems('sport'),medications:collectItems('meds'),notes:val('notes')};if(!entry.date)return alert('La fecha es obligatoria.');let list=loadEntries();const idx=list.findIndex(x=>x.id===entry.id);if(idx>=0)list[idx]=entry;else list.push(entry);list.sort((a,b)=>b.date.localeCompare(a.date));saveEntries(list);const flags=redFlags(entry);$('alertBox').textContent=flags.length?`Atención: ${flags.join(', ')}. Si aparece fiebre, calor/enrojecimiento intenso o pérdida importante de movilidad, consulta.`:'Registro guardado correctamente.';$('alertBox').classList.remove('hidden');setTimeout(()=>$('alertBox').classList.add('hidden'),5000);resetForm()}
+function resetForm(){$('entryForm').reset();$('editingId').value='';$('date').value=localDateISO();$('time').value=nowTime();$('usualSchedule').checked=true;photoData='';$('photoPreview').classList.add('hidden');renderCheckLists();renderTrainingTypes();bindRanges();adaptive()}
+function renderHistory(){const filter=val('searchDate');const list=loadEntries().filter(e=>!filter||e.date===filter).sort((a,b)=>b.date.localeCompare(a.date));$('historyList').innerHTML=list.length?'':'<p class="muted">Aún no hay registros.</p>';list.forEach(e=>{const tr=e.training;const badges=[`Sueño ${e.sleep?.score??0}/100`,`${(e.sleep?.hours||0)}h ${e.sleep?.minutes||0}m`,`Fatiga ${e.health?.fatigue??0}/10`,`Inflamación ${e.health?.handSwelling??0}/10`];if(tr){badges.push(`${tr.icon||'🏃'} ${tr.typeName}`,fmtDuration(tr.durationSec));if(tr.distanceKm)badges.push(`${tr.distanceKm} km`);if(tr.elevationGain)badges.push(`+${tr.elevationGain} m`);if(tr.tssValue)badges.push(`${tr.tssValue} ${tr.tssType||'hrTSS'}`);if(tr.rpeGlobal)badges.push(`RPE ${tr.rpeGlobal}`);if(tr.competition)badges.push('🏁 Competición')}const d=document.createElement('div');d.className='history-item';d.innerHTML=`<div class="history-head"><strong>${esc(e.date)} ${esc(e.time||'')}</strong><span>${tr?`${esc(tr.icon)} ${esc(tr.typeName)}`:'Sin entrenamiento'}</span></div><div class="badges">${badges.map(x=>`<span class="badge">${esc(x)}</span>`).join('')}</div><details><summary>Ver detalle completo</summary><div class="detail">${detailHtml(e)}</div></details><div class="history-actions"><button class="btn secondary" data-edit="${e.id}">Editar</button><button class="btn danger" data-del="${e.id}">Eliminar</button></div>`;$('historyList').appendChild(d)});document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('¿Eliminar este registro?')){saveEntries(loadEntries().filter(x=>x.id!==b.dataset.del));renderHistory()}});document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editEntry(b.dataset.edit))}
+function detailHtml(e){const tr=e.training;return `<h4>😴 Sueño</h4><p>${e.sleep?.hours||0} h ${e.sleep?.minutes||0} min · Apple ${e.sleep?.score||0}/100 · Horario ${e.sleep?.usualSchedule?'habitual':'no habitual'} ${e.sleep?.comment?`· ${esc(e.sleep.comment)}`:''}</p><h4>🩺 Salud</h4><p>Fatiga ${e.health?.fatigue||0}; dolor muscular ${e.health?.musclePain||0}; rigidez ${e.health?.bodyStiffness||0}; cardio ${e.health?.cardio||0}; estrés ${e.health?.stress||0}. Manos: inflamación ${e.health?.handSwelling||0}, dolor ${e.health?.handPain||0}, cierre ${e.health?.handClosure||0}. Descamación ${e.health?.peeling||0}/3.</p>${tr?`<h4>🏃 Entrenamiento</h4><p>${esc(tr.icon)} ${esc(tr.typeName)}${tr.competition?' · 🏁 Competición':''} · ${fmtDuration(tr.durationSec)}${tr.distanceKm?` · ${tr.distanceKm} km`:''}${tr.elevationGain?` · +${tr.elevationGain} m`:''}${tr.elevationLoss?` · -${tr.elevationLoss} m`:''}${tr.tssValue?` · ${tr.tssValue} ${esc(tr.tssType)}`:''}${tr.ifValue?` · IF ${tr.ifValue}`:''}${tr.rpeGlobal?` · RPE ${tr.rpeGlobal}`:''}</p>${tr.comment?`<p><b>Comentario:</b> ${esc(tr.comment)}</p>`:''}`:''}<h4>💊 Tratamiento</h4><p><b>Diarios:</b> ${itemsText(e.dailySupplements)}<br><b>Deportivos:</b> ${itemsText(e.sportSupplements)}<br><b>Medicación:</b> ${itemsText(e.medications)}</p>${e.notes?`<h4>📝 Observaciones</h4><p>${esc(e.notes)}</p>`:''}${e.health?.photo?`<img class="preview" src="${e.health.photo}" alt="Foto">`:''}`}
+function itemsText(items){return items?.length?items.map(x=>`${esc(x.name)} ${x.amount} ${esc(x.unit)}`).join(', '):'—'}
+function editEntry(id){const e=loadEntries().find(x=>x.id===id);if(!e)return;resetForm();$('editingId').value=e.id;$('date').value=e.date;$('time').value=e.time||'';$('sleepHours').value=e.sleep?.hours??'';$('sleepMinutes').value=e.sleep?.minutes??'';$('sleepScore').value=e.sleep?.score??'';$('usualSchedule').checked=e.sleep?.usualSchedule!==false;$('scheduleReason').value=e.sleep?.scheduleReason||'';$('sleepComment').value=e.sleep?.comment||'';const h=e.health||{};['fatigue','musclePain','bodyStiffness','cardio','stress','handSwelling','handPain','handClosure','peeling','itch'].forEach(k=>{if($(k))$(k).value=h[k]??0});$('infection').value=h.infection||'no';$('morningStiffness').value=h.morningStiffness||'0';$('jointNotes').value=h.jointNotes||'';$('skinNotes').value=h.skinNotes||'';document.querySelectorAll('#jointChips input').forEach(x=>x.checked=(h.joints||[]).includes(x.value));photoData=h.photo||'';if(photoData){$('photoPreview').src=photoData;$('photoPreview').classList.remove('hidden')}setTraining(e.training);setItems('daily',e.dailySupplements);setItems('sport',e.sportSupplements);setItems('meds',e.medications);$('notes').value=e.notes||'';bindRanges();adaptive();document.querySelector('[data-tab="registro"]').click();window.scrollTo({top:0,behavior:'smooth'})}
+function renderSettings(){const s=loadSettings();renderSettingsGroup('training','trainingSettings',true);renderSettingsGroup('daily','dailySettings');renderSettingsGroup('sport','sportSettings');renderSettingsGroup('meds','medSettings');function renderSettingsGroup(group,target,isTraining=false){$(target).innerHTML=s[group].map((x,i)=>`<div class="settings-row" data-settings="${group}" data-id="${x.id}">${isTraining?`<input class="icon-input" data-k="icon" value="${esc(x.icon||'')}">`:''}<input class="wide" data-k="name" value="${esc(x.name)}"><input data-k="dose" type="${isTraining?'hidden':'number'}" step="0.01" value="${esc(x.dose??'')}"><input data-k="unit" type="${isTraining?'hidden':'text'}" value="${esc(x.unit||'')}"><input data-k="composition" class="wide" type="${isTraining?'hidden':'text'}" value="${esc(x.composition||'')}" placeholder="Composición"><button class="btn danger small-btn" data-remove="${group}:${x.id}">×</button></div>`).join('')||'<p class="muted">Sin elementos.</p>'}document.querySelectorAll('.settings-row input').forEach(inp=>inp.onchange=saveSettingsFromUi);document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{const [g,id]=b.dataset.remove.split(':');const st=loadSettings();st[g]=st[g].filter(x=>x.id!==id);saveSettings(st);renderSettings();renderCheckLists();renderTrainingTypes()})}
+function saveSettingsFromUi(){const st=loadSettings();document.querySelectorAll('.settings-row').forEach(row=>{const g=row.dataset.settings,id=row.dataset.id,item=st[g].find(x=>x.id===id);if(!item)return;row.querySelectorAll('[data-k]').forEach(inp=>item[inp.dataset.k]=inp.type==='number'?Number(inp.value||0):inp.value)});saveSettings(st);renderCheckLists();renderTrainingTypes()}
+document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{const g=b.dataset.add,st=loadSettings(),id=`${g}_${Date.now()}`;st[g].push(g==='training'?{id,name:'Nuevo tipo',icon:'🏃',enabled:true}:{id,name:'Nuevo elemento',dose:1,unit:'unidad',composition:'',enabled:true});saveSettings(st);renderSettings();renderCheckLists();renderTrainingTypes()});$('resetSettings').onclick=()=>{if(confirm('¿Restaurar los ajustes iniciales?')){saveSettings(clone(defaultSettings));renderSettings();renderCheckLists();renderTrainingTypes()}}
+$('exportJson').onclick=()=>download(JSON.stringify({app:'HealthLab',version:'1.0.0',exportedAt:new Date().toISOString(),settings:loadSettings(),entries:loadEntries()},null,2),`healthlab_${localDateISO()}.json`,'application/json');$('exportCsv').onclick=()=>{const rows=loadEntries(),cols=['date','time','sleepScore','sleepHours','sleepMinutes','fatigue','handSwelling','trainingType','durationSec','distanceKm','elevationGain','tssValue','tssType','rpeGlobal','notes'];const csv=[cols.join(','),...rows.map(e=>[e.date,e.time,e.sleep?.score,e.sleep?.hours,e.sleep?.minutes,e.health?.fatigue,e.health?.handSwelling,e.training?.typeName,e.training?.durationSec,e.training?.distanceKm,e.training?.elevationGain,e.training?.tssValue,e.training?.tssType,e.training?.rpeGlobal,e.notes].map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(','))].join('\n');download(csv,`healthlab_${localDateISO()}.csv`,'text/csv;charset=utf-8')};function download(content,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+$('importJson').onchange=async ev=>{try{const d=JSON.parse(await ev.target.files[0].text()),entries=Array.isArray(d)?d:d.entries;if(!Array.isArray(entries))throw Error();if(confirm('Esto sustituirá los datos actuales. ¿Continuar?')){saveEntries(entries);if(d.settings)saveSettings(d.settings);renderHistory();renderSettings();renderCheckLists();alert('Datos importados.')}}catch{alert('Archivo JSON no válido.')}};$('deleteAll').onclick=()=>{if(confirm('¿Borrar todos los registros?')){localStorage.removeItem(DATA_KEY);renderHistory()}};
+document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));btn.classList.add('active');$(btn.dataset.tab).classList.add('active');if(btn.dataset.tab==='historial')renderHistory();if(btn.dataset.tab==='ajustes')renderSettings()});$('clearFilter').onclick=()=>{$('searchDate').value='';renderHistory()};$('searchDate').onchange=renderHistory;$('resetBtn').onclick=resetForm;$('usualSchedule').onchange=adaptive;$('trained').onchange=()=>{adaptive();if($('trained').checked){renderTrainingTypes();renderTrainingFields()}};$('trainingType').onchange=renderTrainingFields;['handSwelling','handPain','handClosure','peeling','itch'].forEach(id=>$(id).oninput=()=>{adaptive();bindRanges()});$('photo').onchange=async e=>{photoData=await compressImage(e.target.files[0]);$('photoPreview').src=photoData;$('photoPreview').classList.remove('hidden')};window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('installBtn').classList.remove('hidden')});$('installBtn').onclick=async()=>{if(deferredPrompt){deferredPrompt.prompt();deferredPrompt=null;$('installBtn').classList.add('hidden')}};if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js?v=100');
+renderJoints();renderCheckLists();renderTrainingTypes();renderSettings();bindRanges();resetForm();

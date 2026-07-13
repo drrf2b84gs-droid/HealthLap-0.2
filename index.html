@@ -2,244 +2,173 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0f766e">
-  <title>HealthLab</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=1.0-rc1.1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#243447">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="HealthLab">
+  <title>HealthLab Beta 1.0.0</title>
+  <link rel="manifest" href="manifest.json?v=100">
+  <link rel="stylesheet" href="styles.css?v=100">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="favicon-32.png">
 </head>
 <body>
-  <header class="topbar">
-    <img src="icon-192.png" class="brand-logo" alt="HealthLab">
-    <div class="brand-copy">
-      <p class="eyebrow">🧪 HEALTHLAB</p>
-      <h1 id="greeting">Buenos días, Luis</h1>
-      <p id="todayText" class="muted-light"></p>
-    </div>
-    <button id="themeToggle" class="icon-button" aria-label="Cambiar apariencia">◐</button>
-  </header>
-
-  <main>
-    <section id="home" class="screen active">
-      <div class="hero-card">
-        <div>
-          <span class="pill">Registro pendiente</span>
-          <h2>¿Cómo has amanecido?</h2>
-          <p>Un día normal debería llevar menos de un minuto.</p>
-        </div>
-        <button class="primary" data-go="record">Registrar ahora</button>
-      </div>
-
-      <div class="metric-grid">
-        <article class="metric-card"><span>🤲 Inflamación</span><strong>0</strong><small>Hoy</small></article>
-        <article class="metric-card amber"><span>🔋 Cansancio</span><strong>0</strong><small>Al despertar</small></article>
-      </div>
-
-      <article class="card">
-        <div class="section-title"><div><span class="kicker">BETA 1.0 RC1</span><h3>Registro adaptativo</h3></div></div>
-        <div class="empty-state">HealthLab muestra detalle solo cuando aporta información útil.</div>
-      </article>
-    </section>
-
-    <section id="record" class="screen">
-      <div class="page-title"><div><span class="kicker">REGISTRO</span><h2>¿Cómo has amanecido?</h2></div></div>
-
-      <form id="quickForm">
-        <article class="card form-card">
-          <div class="form-head">
-            <div><span class="kicker">HOY</span><h3>📅 Datos generales</h3></div>
-            <input id="entryDate" type="date" required>
-          </div>
-        </article>
-
-        <article class="card form-card">
-          <div class="section-title"><div><span class="kicker">DESCANSO</span><h3>😴 Sueño</h3></div></div>
-          <div class="grid two">
-            <label>Puntuación Apple (0–100)
-              <input id="sleepScore" type="number" inputmode="numeric" min="0" max="100" placeholder="Ej. 88">
-            </label>
-            <label>Horas de sueño
-              <div class="duration-grid compact">
-                <input id="sleepHours" type="number" min="0" max="24" value="0" aria-label="Horas">
-                <span>h</span>
-                <input id="sleepMinutes" type="number" min="0" max="59" value="0" aria-label="Minutos">
-                <span>min</span>
-              </div>
-            </label>
-          </div>
-          <label class="switch-row card-switch"><input id="usualSleepSchedule" type="checkbox" checked><span>Seguí mi horario habitual</span></label>
-          <div id="sleepExceptionFields" class="conditional hidden">
-            <label>¿Qué cambió?
-              <select id="sleepExceptionType">
-                <option value="lateBed">Me acosté más tarde</option>
-                <option value="lateWake">Me levanté más tarde</option>
-                <option value="bothLate">Me acosté y levanté más tarde</option>
-                <option value="interrupted">Sueño interrumpido</option>
-                <option value="travel">Viaje / cambio de rutina</option>
-                <option value="other">Otro</option>
-              </select>
-            </label>
-            <label>Comentario opcional<textarea id="sleepNotes" rows="2" placeholder="Ej. Oliver se despertó varias veces"></textarea></label>
-          </div>
-        </article>
-
-        <article class="card form-card">
-          <div class="section-title"><div><span class="kicker">ESTADO</span><h3>🩺 Síntomas</h3></div></div>
-          <div class="metric-form-grid">
-            <label class="scale-card"><span>Cansancio</span><div class="scale-control"><input id="fatigue" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-            <label class="scale-card"><span>Piernas cargadas</span><div class="scale-control"><input id="legFatigue" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-            <label class="scale-card"><span>Inflamación manos</span><div class="scale-control"><input id="handSwelling" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-            <label class="scale-card"><span>Dolor manos</span><div class="scale-control"><input id="handPain" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-            <label class="scale-card"><span>Rigidez manos</span><div class="scale-control"><input id="handStiffness" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-            <label class="scale-card"><span>Descamación (0–3)</span><div class="scale-control"><input id="peeling" type="range" min="0" max="3" value="0"><output>0</output></div></label>
-          </div>
-          <div id="symptomDetail" class="conditional hidden detail-box">
-            <label>Observaciones de síntomas<textarea id="symptomNotes" rows="3" placeholder="Localización, evolución, dolor, movilidad, posibles desencadenantes..."></textarea></label>
-            <label>Foto opcional<input id="symptomPhoto" type="file" accept="image/*" capture="environment"></label>
-          </div>
-        </article>
-
-        <article class="card form-card">
-          <div class="section-title split">
-            <div><span class="kicker">AYER</span><h3>🏃 Entrenamiento</h3></div>
-            <label class="switch-row"><input id="trainedYesterday" type="checkbox"><span>Entrené</span></label>
-          </div>
-
-          <div id="trainingFields" class="conditional hidden">
-            <div class="grid two">
-              <label>Tipo<select id="trainingType"></select></label>
-              <label class="switch-row card-switch competition-switch"><input id="isCompetition" type="checkbox"><span>🏁 Competición</span></label>
-            </div>
-
-            <div class="training-section common-training">
-              <h4>Duración</h4>
-              <div class="duration-grid">
-                <input id="durationHours" type="number" min="0" max="99" value="0" aria-label="Horas"><span>h</span>
-                <input id="durationMinutes" type="number" min="0" max="59" value="0" aria-label="Minutos"><span>min</span>
-                <input id="durationSeconds" type="number" min="0" max="59" value="0" aria-label="Segundos"><span>s</span>
-              </div>
-            </div>
-
-            <div id="runningFields" class="training-specific hidden">
-              <div class="grid two">
-                <label>Terreno
-                  <select id="runningTerrain">
-                    <option value="asphalt">Asfalto</option><option value="track">Pista</option><option value="path" selected>Camino / río</option><option value="trail">Trail</option><option value="mountain">Montaña</option><option value="mixed">Mixto</option>
-                  </select>
-                </label>
-                <label>Distancia (km)<input id="distanceKm" type="number" min="0" step="0.01" inputmode="decimal"></label>
-                <label>Desnivel + (m)<input id="elevationGain" type="number" min="0" step="1" inputmode="numeric"></label>
-                <label>Desnivel − (m)<input id="elevationLoss" type="number" min="0" step="1" inputmode="numeric"></label>
-                <label>Ritmo medio
-                  <div class="duration-grid compact"><input id="paceMinutes" type="number" min="0" max="99" value="0"><span>min</span><input id="paceSeconds" type="number" min="0" max="59" value="0"><span>/km</span></div>
-                </label>
-                <label>Tipo de carga<select id="tssType"><option value="hrTSS" selected>hrTSS</option><option value="TSS">TSS</option><option value="rTSS">rTSS</option><option value="other">Otro</option></select></label>
-                <label>Valor TSS<input id="tssValue" type="number" min="0" step="0.1" inputmode="decimal"></label>
-                <label>Factor de intensidad (IF)<input id="intensityFactor" type="number" min="0" max="3" step="0.01" inputmode="decimal" placeholder="Ej. 0,78"></label>
-              </div>
-              <div class="metric-form-grid three">
-                <label class="scale-card"><span>RPE global</span><div class="scale-control"><input id="rpeGlobal" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-                <label class="scale-card"><span>RPE piernas</span><div class="scale-control"><input id="rpeLegs" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-                <label class="scale-card"><span>RPE cardio</span><div class="scale-control"><input id="rpeCardio" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-              </div>
-            </div>
-
-            <div id="bikeFields" class="training-specific hidden">
-              <div class="grid two">
-                <label>Distancia (km, opcional)<input id="bikeDistanceKm" type="number" min="0" step="0.01"></label>
-                <label>Potencia media (W, opcional)<input id="avgPower" type="number" min="0"></label>
-                <label>Cadencia media (rpm, opcional)<input id="avgCadence" type="number" min="0"></label>
-                <label>Tipo de carga<select id="bikeTssType"><option value="hrTSS" selected>hrTSS</option><option value="TSS">TSS</option><option value="other">Otro</option></select></label>
-                <label>Valor TSS<input id="bikeTssValue" type="number" min="0" step="0.1"></label>
-                <label>Factor de intensidad (IF)<input id="bikeIntensityFactor" type="number" min="0" max="3" step="0.01"></label>
-              </div>
-              <div class="metric-form-grid three">
-                <label class="scale-card"><span>RPE global</span><div class="scale-control"><input id="bikeRpeGlobal" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-                <label class="scale-card"><span>RPE piernas</span><div class="scale-control"><input id="bikeRpeLegs" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-                <label class="scale-card"><span>RPE cardio</span><div class="scale-control"><input id="bikeRpeCardio" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-              </div>
-            </div>
-
-            <div id="trekkingFields" class="training-specific hidden">
-              <div class="grid two">
-                <label>Distancia (km)<input id="trekDistanceKm" type="number" min="0" step="0.01"></label>
-                <label>Desnivel + (m)<input id="trekElevationGain" type="number" min="0"></label>
-                <label>Desnivel − (m)<input id="trekElevationLoss" type="number" min="0"></label>
-              </div>
-              <label class="scale-card inline-scale"><span>RPE global</span><div class="scale-control"><input id="trekRpeGlobal" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-            </div>
-
-            <div id="simpleRpeFields" class="training-specific hidden">
-              <label class="scale-card inline-scale"><span>RPE global</span><div class="scale-control"><input id="simpleRpeGlobal" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-            </div>
-
-            <label>Comentario del entrenamiento<textarea id="trainingNotes" rows="3" placeholder="Sensaciones, dolor, por qué el RPE fue alto, molestias como la cintilla..."></textarea></label>
-          </div>
-        </article>
-
-        <article class="card form-card">
-          <div class="section-title"><div><span class="kicker">RUTINA</span><h3>💊 Suplementación y medicación</h3></div></div>
-          <div id="dailySupplements" class="daily-list"></div>
-          <div id="dailyMedications" class="daily-list"></div>
-          <p class="muted tiny">La lista se gestiona desde ⚙️ Ajustes.</p>
-        </article>
-
-        <article class="card form-card"><label>📝 Observaciones generales<textarea id="notes" rows="4" placeholder="Solo si hay algo relevante"></textarea></label></article>
-
-        <button type="submit" class="primary save-button">Guardar registro</button>
-      </form>
-    </section>
-
-    <section id="calendar" class="screen">
-      <div class="page-title"><div><span class="kicker">HISTORIAL</span><h2>📅 Calendario</h2></div></div>
-      <article class="card">
-        <div class="calendar-head"><button id="prevMonth" class="icon-button dark">‹</button><h3 id="calendarTitle"></h3><button id="nextMonth" class="icon-button dark">›</button></div>
-        <div class="weekdays"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
-        <div id="calendarGrid" class="calendar-grid"></div>
-      </article>
-      <div id="dayDetail"></div>
-    </section>
-
-    <section id="stats" class="screen">
-      <div class="page-title"><div><span class="kicker">ANÁLISIS</span><h2>📊 Estadísticas</h2></div></div>
-      <article class="card"><p class="muted">Esta pestaña se mantiene básica durante la beta. Se mejorará tras acumular datos reales.</p><label>Periodo<select id="statsPeriod"><option value="7">7 días</option><option value="30" selected>30 días</option><option value="90">90 días</option><option value="all">Todo</option></select></label></article>
-      <div id="statsCards" class="metric-grid"></div>
-      <article class="card"><span class="kicker">EVOLUCIÓN</span><h3>Inflamación y cansancio</h3><canvas id="statsChart" height="220"></canvas></article>
-    </section>
-
-    <section id="settings" class="screen">
-      <div class="page-title"><div><span class="kicker">PERSONALIZACIÓN</span><h2>⚙️ Ajustes</h2></div></div>
-      <article class="card"><div class="section-title split"><div><span class="kicker">SUPLEMENTOS</span><h3>Productos habituales</h3></div><button type="button" class="small-button" data-add="supplements">Añadir</button></div><div id="supplementsList" class="config-list"></div></article>
-      <article class="card"><div class="section-title split"><div><span class="kicker">MEDICACIÓN</span><h3>Tratamientos</h3></div><button type="button" class="small-button" data-add="medications">Añadir</button></div><div id="medicationsList" class="config-list"></div></article>
-      <article class="card"><div class="section-title split"><div><span class="kicker">ENTRENAMIENTOS</span><h3>Tipos disponibles</h3></div><button type="button" class="small-button" data-add="trainingTypes">Añadir</button></div><div id="trainingTypesList" class="config-list"></div></article>
-      <article class="card"><span class="kicker">DATOS</span><h3>Copias de seguridad</h3><p class="muted">Los datos se guardan únicamente en este dispositivo. Exporta una copia JSON periódicamente.</p><div class="button-row"><button id="exportAll" type="button" class="secondary-button">Exportar copia completa</button><label class="secondary-button file-label">Importar copia completa<input id="importAll" type="file" accept=".json,application/json"></label><button id="resetDemo" type="button" class="danger">Restablecer todo</button></div></article>
-      <article class="card"><span class="kicker">VERSIÓN</span><h3>HealthLab Beta 1.0 RC1</h3><p class="muted">Primera candidata para prueba real de una semana.</p></article>
-    </section>
-  </main>
-
-  <nav class="bottom-nav">
-    <button class="nav-item active" data-go="home"><span>🏠</span><small>Inicio</small></button>
-    <button class="nav-item" data-go="record"><span>➕</span><small>Registrar</small></button>
-    <button class="nav-item" data-go="calendar"><span>📅</span><small>Calendario</small></button>
-    <button class="nav-item" data-go="stats"><span>📊</span><small>Estadísticas</small></button>
-    <button class="nav-item" data-go="settings"><span>⚙️</span><small>Ajustes</small></button>
-  </nav>
-
-  <div id="configModal" class="modal-backdrop" aria-hidden="true">
-    <div class="modal">
-      <h3 id="modalTitle">Añadir elemento</h3>
-      <div class="modal-grid">
-        <label>Nombre<input id="configName" type="text"></label>
-        <label id="configEmojiLabel">Emoji<input id="configEmoji" type="text" maxlength="4" placeholder="Ej. 🏃"></label>
-        <label id="configCategoryLabel">Categoría<select id="configCategory"><option value="health">Salud</option><option value="sport">Deporte</option><option value="other">Otro</option></select></label>
-      </div>
-      <div class="modal-actions"><button id="modalCancel" type="button" class="secondary-button">Cancelar</button><button id="modalSave" type="button" class="primary teal-button">Guardar</button></div>
-    </div>
+<header class="app-header">
+  <div>
+    <h1>🧪 HealthLab</h1>
+    <p>Diario de salud y entrenamiento · Beta 1.0.0</p>
   </div>
+  <button id="installBtn" class="btn secondary hidden">Instalar</button>
+</header>
+<nav class="tabs">
+  <button class="tab active" data-tab="registro">📝 Registro</button>
+  <button class="tab" data-tab="historial">📅 Historial</button>
+  <button class="tab" data-tab="ajustes">⚙️ Ajustes</button>
+</nav>
+<main>
+<section id="registro" class="panel active">
+<form id="entryForm" novalidate>
+  <input type="hidden" id="editingId">
+  <article class="card">
+    <h2>📆 Día</h2>
+    <div class="grid two">
+      <label>Fecha<input id="date" type="date" required></label>
+      <label>Hora<input id="time" type="time"></label>
+    </div>
+  </article>
 
-  <script src="app.js?v=1.0-rc1.1"></script>
+  <article class="card">
+    <h2>😴 Sueño</h2>
+    <div class="grid two">
+      <label>Horas de sueño
+        <div class="duration compact"><input id="sleepHours" type="number" min="0" max="24" placeholder="7"><span>h</span><input id="sleepMinutes" type="number" min="0" max="59" placeholder="30"><span>min</span></div>
+      </label>
+      <label>Puntuación Apple (0–100)<input id="sleepScore" type="number" min="0" max="100" placeholder="88"></label>
+    </div>
+    <label class="switch-row"><input id="usualSchedule" type="checkbox" checked><span>Horario habitual</span></label>
+    <div id="scheduleDetail" class="conditional hidden">
+      <label>¿Qué cambió?<select id="scheduleReason"><option value="">Seleccionar</option><option>Me acosté más tarde</option><option>Me levanté más tarde</option><option>Me acosté y levanté más tarde</option><option>Sueño interrumpido</option><option>Viaje</option><option>Oliver / familia</option><option>Otro</option></select></label>
+      <label>Comentario del sueño<textarea id="sleepComment" rows="2"></textarea></label>
+    </div>
+  </article>
+
+  <article class="card">
+    <h2>🩺 Estado general</h2>
+    <div class="grid two">
+      <label>Fatiga al despertar (0–10)<input id="fatigue" type="range" min="0" max="10" value="0"><output for="fatigue">0</output></label>
+      <label>Dolor muscular (0–10)<input id="musclePain" type="range" min="0" max="10" value="0"><output for="musclePain">0</output></label>
+      <label>Rigidez corporal (0–10)<input id="bodyStiffness" type="range" min="0" max="10" value="0"><output for="bodyStiffness">0</output></label>
+      <label>Sensación cardio anormal (0–10)<input id="cardio" type="range" min="0" max="10" value="0"><output for="cardio">0</output></label>
+      <label>Estrés (0–10)<input id="stress" type="range" min="0" max="10" value="0"><output for="stress">0</output></label>
+      <label>Infección / malestar<select id="infection"><option value="no">No</option><option value="leve">Leve</option><option value="moderado">Moderado</option><option value="intenso">Intenso</option></select></label>
+    </div>
+  </article>
+
+  <article class="card">
+    <h2>🤲 Manos y articulaciones</h2>
+    <div class="grid two">
+      <label>Inflamación (0–10)<input id="handSwelling" type="range" min="0" max="10" value="0"><output for="handSwelling">0</output></label>
+      <label>Dolor articular (0–10)<input id="handPain" type="range" min="0" max="10" value="0"><output for="handPain">0</output></label>
+      <label>Limitación al cerrar la mano (0–10)<input id="handClosure" type="range" min="0" max="10" value="0"><output for="handClosure">0</output></label>
+      <label>Rigidez matinal<select id="morningStiffness"><option value="0">Ninguna</option><option value="<15">&lt; 15 min</option><option value="15-30">15–30 min</option><option value="30-60">30–60 min</option><option value=">60">&gt; 60 min</option></select></label>
+    </div>
+    <div id="handDetail" class="conditional hidden">
+      <h3>Dedos o articulaciones afectadas</h3>
+      <div class="chips" id="jointChips"></div>
+      <label>Observaciones<textarea id="jointNotes" rows="3"></textarea></label>
+      <label>Foto opcional<input id="photo" type="file" accept="image/*" capture="environment"></label>
+      <img id="photoPreview" class="preview hidden" alt="Vista previa">
+    </div>
+  </article>
+
+  <article class="card">
+    <h2>🖐️ Piel</h2>
+    <div class="grid two">
+      <label>Descamación de palmas (0–3)<select id="peeling"><option value="0">0 — Ninguna</option><option value="1">1 — Leve</option><option value="2">2 — Moderada</option><option value="3">3 — Intensa</option></select></label>
+      <label>Picor / escozor (0–10)<input id="itch" type="range" min="0" max="10" value="0"><output for="itch">0</output></label>
+    </div>
+    <div id="skinDetail" class="conditional hidden"><label>Observaciones de piel<textarea id="skinNotes" rows="2"></textarea></label></div>
+  </article>
+
+  <article class="card">
+    <h2>🏃 Entrenamiento</h2>
+    <label class="switch-row"><input id="trained" type="checkbox"><span>Entrené</span></label>
+    <div id="trainingBlock" class="conditional hidden">
+      <div class="grid two">
+        <label>Tipo<select id="trainingType"></select></label>
+        <label class="switch-row compact-switch"><input id="competition" type="checkbox"><span>🏁 Competición</span></label>
+      </div>
+      <div id="trainingFields"></div>
+    </div>
+  </article>
+
+  <article class="card">
+    <h2>💊 Suplementación diaria</h2>
+    <p class="muted">Marca lo tomado hoy y ajusta la cantidad si difiere de la dosis habitual.</p>
+    <div id="dailySupplements" class="config-list"></div>
+  </article>
+
+  <article class="card">
+    <h2>🥤 Nutrición y suplementación deportiva</h2>
+    <div id="sportSupplements" class="config-list"></div>
+  </article>
+
+  <article class="card">
+    <h2>💉 Medicación</h2>
+    <div id="medicationList" class="config-list"></div>
+  </article>
+
+  <article class="card">
+    <h2>📝 Observaciones</h2>
+    <textarea id="notes" rows="4" placeholder="Cualquier detalle relevante del día"></textarea>
+  </article>
+
+  <div id="alertBox" class="alert hidden"></div>
+  <div class="sticky-actions"><button class="btn primary" type="submit">Guardar registro</button><button class="btn secondary" type="button" id="resetBtn">Limpiar</button></div>
+</form>
+</section>
+
+<section id="historial" class="panel">
+  <article class="card">
+    <h2>📅 Historial</h2>
+    <div class="toolbar"><input id="searchDate" type="date"><button id="clearFilter" class="btn secondary">Ver todos</button></div>
+    <div id="historyList"></div>
+  </article>
+  <article class="card">
+    <h2>📤 Exportar y seguridad</h2>
+    <div class="actions"><button id="exportJson" class="btn secondary">Copia JSON</button><button id="exportCsv" class="btn secondary">Exportar CSV</button><label class="file-button">Importar JSON<input id="importJson" type="file" accept=".json,application/json"></label><button id="deleteAll" class="btn danger">Borrar todo</button></div>
+    <p class="muted">Los datos se guardan solo en este dispositivo. Para pasar de iPad a iPhone, exporta el JSON en el iPad e impórtalo en el iPhone.</p>
+  </article>
+</section>
+
+<section id="ajustes" class="panel">
+  <article class="card">
+    <h2>⚙️ Tipos de entrenamiento</h2>
+    <div id="trainingSettings"></div>
+    <button class="btn secondary" data-add="training">Añadir tipo</button>
+  </article>
+  <article class="card">
+    <h2>💊 Suplementación diaria</h2>
+    <div id="dailySettings"></div>
+    <button class="btn secondary" data-add="daily">Añadir suplemento</button>
+  </article>
+  <article class="card">
+    <h2>🥤 Nutrición deportiva</h2>
+    <div id="sportSettings"></div>
+    <button class="btn secondary" data-add="sport">Añadir producto</button>
+  </article>
+  <article class="card">
+    <h2>💉 Medicación</h2>
+    <div id="medSettings"></div>
+    <button class="btn secondary" data-add="meds">Añadir medicación</button>
+  </article>
+  <article class="card">
+    <h2>🛠️ Configuración</h2>
+    <button id="resetSettings" class="btn danger">Restaurar ajustes iniciales</button>
+  </article>
+</section>
+</main>
+<script src="app.js?v=100"></script>
 </body>
 </html>
