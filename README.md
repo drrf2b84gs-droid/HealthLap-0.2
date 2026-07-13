@@ -1,34 +1,21 @@
-# HealthLab
+# HealthLab — Beta 1.0 RC1
 
-Aplicación PWA de seguimiento clínico-deportivo personal.
+Aplicación web progresiva para el registro adaptativo de salud, sueño y entrenamiento.
 
-## v0.2
-- Identidad HealthLab.
-- Configuración dinámica de síntomas.
-- Configuración dinámica de suplementos y composición.
-- Medicación editable.
-- Tipos de entrenamiento editables.
-- Activar, ocultar, editar, eliminar y ordenar elementos.
-- Exportación e importación de configuración.
-- Almacenamiento local.
+## Publicación en GitHub Pages
+Sube todos los archivos y carpetas de este paquete a la raíz del repositorio oficial. GitHub Pages debe desplegar la rama `main` desde `/ (root)`.
 
+## Actualización en iPhone/iPad
+Tras publicar, abre HealthLab en Safari y recarga. Si la versión instalada conserva la interfaz anterior, cierra la app desde el selector de aplicaciones, vuelve a abrirla y recarga Safari. El service worker de RC1 usa una caché nueva.
 
-## v0.2.2
-- Nuevo icono oficial HealthLab.
-- Iconos PWA 192 y 512 px.
-- Iconos iOS 180 y 120 px.
-- Favicon.
-- Logo visible en la cabecera.
+## Prueba RC1
+Usar durante 7 días. Solo se corrigen bloqueos o datos incorrectos. Las ideas nuevas pasan al Backlog.
 
+## Privacidad y copias
+Los datos permanecen en `localStorage` del navegador. Exporta una copia completa desde Ajustes de forma periódica.
 
-## v0.3 funcional
-- Registro diario real.
-- Valores por defecto a cero.
-- Cansancio y piernas cargadas.
-- Inflamación, dolor, rigidez y descamación.
-- Sueño.
-- Entrenamiento de ayer.
-- RPE piernas y RPE cardio.
-- Rutina habitual de suplementos.
-- Calendario e historial.
-- Estadísticas básicas.
+## Documentación
+- `docs/BLUEPRINT.md`
+- `docs/ROADMAP.md`
+- `docs/CHANGELOG.md`
+- `docs/BACKLOG.md`
