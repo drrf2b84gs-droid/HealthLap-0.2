@@ -1,3 +1,9 @@
+# HealthLab Beta 1.0 RC1.1
+
+Hotfix de despliegue para asegurar que GitHub Pages/Safari cargan el HTML y recursos nuevos.
+
+Comprobación visual: el encabezado muestra `RC1.1`; el bloque de sueño muestra puntuación Apple 0–100; los tipos de entrenamiento muestran emojis.
+
 # HealthLab — Beta 1.0 RC1
 
 Aplicación web progresiva para el registro adaptativo de salud, sueño y entrenamiento.
