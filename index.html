@@ -9,12 +9,12 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=1.0.1">
+  <link rel="stylesheet" href="styles.css?v=1.0.2">
 </head>
 <body>
 <header class="topbar">
   <img src="icon-192.png" class="brand-logo" alt="HealthLab">
-  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.1</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
+  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.2</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
   <button id="themeToggle" class="icon-button" aria-label="Cambiar apariencia">◐</button>
 </header>
 <main>
@@ -34,8 +34,12 @@
         <label class="scale-card"><span>Piernas cargadas</span><div class="scale-control"><input id="legFatigue" type="range" min="0" max="10" value="0"><output>0</output></div></label>
         <label class="scale-card"><span>Inflamación manos</span><div class="scale-control"><input id="handSwelling" type="range" min="0" max="10" value="0"><output>0</output></div></label>
         <label class="scale-card"><span>Dolor manos</span><div class="scale-control"><input id="handPain" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-        <label class="scale-card"><span>Rigidez manos</span><div class="scale-control"><input id="handStiffness" type="range" min="0" max="10" value="0"><output>0</output></div></label>
+        <label class="scale-card"><span>Estrés al despertar</span><div class="scale-control"><input id="stress" type="range" min="0" max="10" value="0"><output>0</output></div></label>
         <label class="scale-card"><span>Descamación (0–3)</span><div class="scale-control"><input id="peeling" type="range" min="0" max="3" value="0"><output>0</output></div></label>
+      </div>
+      <div class="marker-row">
+        <label class="tick-card"><input id="calfTension" type="checkbox"><span>🦵 Tensión en gemelos al despertar</span></label>
+        <label class="tick-card"><input id="jawTension" type="checkbox"><span>😬 Tensión mandibular</span></label>
       </div>
     </article>
 
@@ -43,26 +47,23 @@
       <div class="section-title"><div><span class="kicker">😴 SUEÑO</span><h3>Descanso</h3></div></div>
       <div class="grid two">
         <label>Puntuación Apple (0–100)<input id="sleepQuality" type="number" min="0" max="100" inputmode="numeric" placeholder="Ej. 88"></label>
-        <label>Horas de sueño<input id="sleepHours" type="number" min="0" max="14" step="0.1" placeholder="Ej. 7,5"></label>
+        <label>Duración del sueño (hh:mm)<input id="sleepDuration" type="text" inputmode="numeric" placeholder="Ej. 07:35" maxlength="5"></label>
       </div>
       <label class="switch-row compact-switch"><input id="usualSchedule" type="checkbox" checked><span>Horario habitual</span></label>
       <div id="sleepException" class="conditional hidden"><label>¿Qué cambió?<textarea id="sleepNotes" rows="2" placeholder="Me acosté tarde, me levanté tarde, Oliver se despertó..."></textarea></label></div>
     </article>
 
     <article class="card form-card">
-      <div class="section-title split"><div><span class="kicker">🏃 AYER</span><h3>Entrenamiento</h3></div><label class="switch-row"><input id="trainedYesterday" type="checkbox"><span>Entrené</span></label></div>
-      <div id="trainingFields" class="conditional hidden">
-        <div class="grid two">
-          <label>Tipo<select id="trainingType"></select></label>
-          <label class="switch-row compact-switch competition-switch"><input id="competition" type="checkbox"><span>🏁 Competición</span></label>
-        </div>
-        <div class="grid three duration-grid">
-          <label>Horas<input id="durationHours" type="number" min="0" max="48" value="0"></label>
-          <label>Minutos<input id="durationMinutes" type="number" min="0" max="59" value="0"></label>
-          <label>Segundos<input id="durationSeconds" type="number" min="0" max="59" value="0"></label>
-        </div>
-        <div id="trainingDynamic"></div>
-        <label>Comentario del entrenamiento<textarea id="trainingNotes" rows="3" placeholder="Sensaciones, dolor de cintilla, motivos del RPE..."></textarea></label>
+      <div class="section-title split"><div><span class="kicker">🏃 AYER</span><h3>Entrenamientos</h3></div><button type="button" id="addTraining" class="small-button">＋ Añadir</button></div>
+      <div id="trainingList" class="training-list"><div class="empty-config">Sin entrenamiento registrado.</div></div>
+    </article>
+
+    <article class="card form-card">
+      <div class="section-title"><div><span class="kicker">🍽️ CONTEXTO</span><h3>Alimentación</h3></div></div>
+      <label class="switch-row compact-switch"><input id="usualFood" type="checkbox" checked><span>Alimentación habitual</span></label>
+      <div id="foodException" class="conditional hidden">
+        <label>¿Qué cambió?<select id="foodChange"><option value="">Selecciona</option><option>Comida rápida</option><option>Mucho azúcar</option><option>Alcohol</option><option>Comida copiosa</option><option>Restaurante</option><option>Alimento nuevo</option><option>Comí peor de lo habitual</option><option>Otro</option></select></label>
+        <label>Detalle opcional<textarea id="foodNotes" rows="2"></textarea></label>
       </div>
     </article>
 
@@ -74,6 +75,11 @@
     <article class="card form-card">
       <div class="section-title"><div><span class="kicker">🥤 DEPORTE</span><h3>Nutrición y suplementación deportiva</h3></div></div>
       <div id="sportSupplements" class="check-list"></div>
+    </article>
+
+    <article class="card form-card">
+      <div class="section-title"><div><span class="kicker">💉 TRATAMIENTO</span><h3>Medicación</h3></div></div>
+      <div id="medications" class="check-list"></div>
     </article>
 
     <article class="card form-card"><label>📝 Observaciones<textarea id="notes" rows="4" placeholder="Solo si hay algo relevante"></textarea></label></article>
@@ -100,5 +106,5 @@
 </main>
 <nav class="bottom-nav"><button class="nav-item active" data-go="home"><span>⌂</span><small>Inicio</small></button><button class="nav-item" data-go="record"><span>＋</span><small>Registrar</small></button><button class="nav-item" data-go="calendar"><span>▦</span><small>Calendario</small></button><button class="nav-item" data-go="stats"><span>⌁</span><small>Estadísticas</small></button><button class="nav-item" data-go="settings"><span>⚙</span><small>Ajustes</small></button></nav>
 <div id="modalBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle"></h3><div id="modalBody" class="modal-grid"></div><div class="modal-actions"><button id="modalCancel" class="secondary-button">Cancelar</button><button id="modalSave" class="small-button">Guardar</button></div></div></div>
-<script src="app.js?v=1.0.1"></script>
+<script src="app.js?v=1.0.2"></script>
 </body></html>

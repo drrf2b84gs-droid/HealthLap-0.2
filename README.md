@@ -1,15 +1,13 @@
-# HealthLab Beta 1.0.1
+# HealthLab Beta 1.0.2
 
-Base visual: interfaz HealthLab v0.3.
+Versión de corrección y uso diario.
 
 Cambios principales:
-- Fecha local.
-- Sueño Apple 0–100 y horario habitual.
-- Entrenamiento adaptativo por deporte.
-- Competición como interruptor.
-- Suplementación diaria separada de nutrición deportiva.
-- Dosis, unidades y composición configurables.
-- Calendario con detalle completo del entrenamiento.
-- Exportación e importación completa.
-
-Los datos siguen guardándose localmente en cada dispositivo.
+- Guardado seguro por fecha.
+- Duraciones hh:mm.
+- Múltiples entrenamientos.
+- RPE con barras.
+- Estrés, tensión mandibular y gemelos.
+- Cambio de alimentación.
+- Temperatura por entrenamiento.
+- Dosis y marcado por defecto configurables.
