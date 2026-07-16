@@ -9,12 +9,12 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=1.0.2">
+  <link rel="stylesheet" href="styles.css?v=1.0.3">
 </head>
 <body>
 <header class="topbar">
   <img src="icon-192.png" class="brand-logo" alt="HealthLab">
-  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.2</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
+  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.3</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
   <button id="themeToggle" class="icon-button" aria-label="Cambiar apariencia">◐</button>
 </header>
 <main>
@@ -31,10 +31,9 @@
       <div class="form-head"><div><span class="kicker">HOY</span><h3>Estado al despertar</h3></div><input id="entryDate" type="date"></div>
       <div class="metric-form-grid">
         <label class="scale-card"><span>Cansancio</span><div class="scale-control"><input id="fatigue" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-        <label class="scale-card"><span>Piernas cargadas</span><div class="scale-control"><input id="legFatigue" type="range" min="0" max="10" value="0"><output>0</output></div></label>
+        <label class="tick-card marker-card"><input id="legFatigue" type="checkbox"><span>🦵 Piernas cargadas al despertar</span></label>
         <label class="scale-card"><span>Inflamación manos</span><div class="scale-control"><input id="handSwelling" type="range" min="0" max="10" value="0"><output>0</output></div></label>
         <label class="scale-card"><span>Dolor manos</span><div class="scale-control"><input id="handPain" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-        <label class="scale-card"><span>Estrés al despertar</span><div class="scale-control"><input id="stress" type="range" min="0" max="10" value="0"><output>0</output></div></label>
         <label class="scale-card"><span>Descamación (0–3)</span><div class="scale-control"><input id="peeling" type="range" min="0" max="3" value="0"><output>0</output></div></label>
       </div>
       <div class="marker-row">
@@ -51,6 +50,14 @@
       </div>
       <label class="switch-row compact-switch"><input id="usualSchedule" type="checkbox" checked><span>Horario habitual</span></label>
       <div id="sleepException" class="conditional hidden"><label>¿Qué cambió?<textarea id="sleepNotes" rows="2" placeholder="Me acosté tarde, me levanté tarde, Oliver se despertó..."></textarea></label></div>
+    </article>
+
+    <article class="card form-card">
+      <div class="section-title"><div><span class="kicker">⚡ AYER</span><h3>Estado durante el día anterior</h3></div></div>
+      <div class="metric-form-grid">
+        <label class="scale-card"><span>Estrés percibido</span><div class="scale-control"><input id="stress" type="range" min="0" max="10" value="0"><output>0</output></div></label>
+        <label class="tick-card marker-card"><input id="eyeTic" type="checkbox"><span>👁️ Tic en el ojo</span></label>
+      </div>
     </article>
 
     <article class="card form-card">
@@ -106,5 +113,5 @@
 </main>
 <nav class="bottom-nav"><button class="nav-item active" data-go="home"><span>⌂</span><small>Inicio</small></button><button class="nav-item" data-go="record"><span>＋</span><small>Registrar</small></button><button class="nav-item" data-go="calendar"><span>▦</span><small>Calendario</small></button><button class="nav-item" data-go="stats"><span>⌁</span><small>Estadísticas</small></button><button class="nav-item" data-go="settings"><span>⚙</span><small>Ajustes</small></button></nav>
 <div id="modalBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle"></h3><div id="modalBody" class="modal-grid"></div><div class="modal-actions"><button id="modalCancel" class="secondary-button">Cancelar</button><button id="modalSave" class="small-button">Guardar</button></div></div></div>
-<script src="app.js?v=1.0.2"></script>
+<script src="app.js?v=1.0.3"></script>
 </body></html>

@@ -99,3 +99,8 @@ input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);borde
 
 /* Beta 1.0.2 */
 .marker-row,.inline-options{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.tick-card{display:flex;flex-direction:row;align-items:center;gap:9px;border:1px solid var(--line);border-radius:13px;padding:11px;background:color-mix(in srgb,var(--card) 95%,var(--soft));font-weight:700}.tick-card input{width:auto}.small-tick{padding:8px 10px;align-self:end}.training-list{display:flex;flex-direction:column;gap:12px}.training-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:color-mix(in srgb,var(--card) 96%,var(--soft))}.training-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.training-rpes{margin:12px 0}.mini-scale{padding:10px}.inline-options>label:not(.tick-card){min-width:170px;flex:1}.training-card textarea{margin-top:4px}@media(max-width:620px){.marker-row,.inline-options{flex-direction:column}.small-tick{align-self:stretch}.training-rpes{grid-template-columns:1fr}.form-head{align-items:flex-start;flex-direction:column}.form-head input{max-width:none}}
+
+/* Beta 1.0.3 */
+.day.selected{outline:3px solid #2563eb;outline-offset:2px;background:#dbeafe!important;color:#1e3a8a!important}
+.marker-card{min-height:54px;justify-content:flex-start}
+.marker-card input{flex:0 0 auto}
