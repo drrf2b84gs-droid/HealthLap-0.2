@@ -1,4 +1,4 @@
-# HealthLab Beta 1.0.3
+# HealthLab Beta 1.0.4
 
 Actualización orientada a estabilidad y uso diario.
 

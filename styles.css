@@ -104,3 +104,6 @@ input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);borde
 .day.selected{outline:3px solid #2563eb;outline-offset:2px;background:#dbeafe!important;color:#1e3a8a!important}
 .marker-card{min-height:54px;justify-content:flex-start}
 .marker-card input{flex:0 0 auto}
+
+.inline-detail-button{margin-top:14px}.hand-detail{margin-top:14px;border-top:1px solid var(--border);padding-top:16px}.finger-fieldset{border:1px solid var(--border);border-radius:14px;margin:14px 0;padding:12px}.finger-fieldset legend{padding:0 6px;font-weight:700}.finger-grid{display:flex;flex-wrap:wrap;gap:10px 16px}.voice-field{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}.voice-button{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:10px;white-space:nowrap}.hand-photo-preview,.history-hand-photo{display:block;max-width:100%;max-height:420px;border-radius:14px;margin:10px 0;object-fit:contain}.detail-section{border-top:1px solid var(--border);padding-top:12px;margin-top:12px}.detail-section h4{margin:0 0 8px}.temporal-note{line-height:1.45}
+@media(max-width:600px){.voice-field{grid-template-columns:1fr}.voice-button{justify-self:start}}
