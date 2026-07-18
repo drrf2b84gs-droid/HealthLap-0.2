@@ -1,13 +1,9 @@
-# HealthLab Beta 1.0.4
+# HealthLab Beta 1.0.5
 
-Actualización orientada a estabilidad y uso diario.
+Corrección del dictado en iPhone y iPad.
 
 ## Cambios principales
-- Entrenamientos múltiples sin pérdida del anterior.
-- Duraciones inteligentes: `42` = 42 min; `1:20` = 1 h 20 min.
-- Estado al despertar y estado del día anterior separados.
-- Tic ocular añadido.
-- Piernas cargadas como marcador sí/no.
-- Día actual y día seleccionado diferenciados.
-- Ajustes respetados; CoQ10 desactivada por defecto.
-- Migración y limpieza de estructuras antiguas del JSON.
+- En Safari, el botón permite detener el dictado y el micrófono se cierra al recibir el resultado.
+- Corte automático tras 12 segundos, al guardar, cambiar de pantalla, ocultar o cerrar la página.
+- En la PWA instalada, el botón enfoca el campo e indica usar el micrófono del teclado, evitando intentar una API no fiable.
+- Conserva todas las funciones y datos de la Beta 1.0.4.
