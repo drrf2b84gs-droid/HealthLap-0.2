@@ -9,12 +9,12 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=1.0.6">
+  <link rel="stylesheet" href="styles.css?v=1.0.7">
 </head>
 <body>
 <header class="topbar">
   <img src="icon-192.png" class="brand-logo" alt="HealthLab">
-  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.6</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
+  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.7</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
   <button id="themeToggle" class="icon-button" aria-label="Cambiar apariencia">◐</button>
 </header>
 <main>
@@ -77,13 +77,23 @@
     </article>
 
     <article class="card form-card">
-      <div class="section-title"><div><span class="kicker">❤️ MAÑANA</span><h3>Recuperación cardiovascular</h3></div></div>
-      <div class="grid three">
-        <label>FC en reposo (ppm)<input id="restingHeartRate" type="number" min="25" max="220" inputmode="numeric" placeholder="Ej. 48"></label>
-        <label>HRV (ms)<input id="hrv" type="number" min="0" max="400" step="0.1" inputmode="decimal" placeholder="Ej. 60"></label>
-        <label>Fuente<select id="hrvSource"><option value="">Sin registrar</option><option>HRV4Training</option><option>Apple Watch</option><option>Otra</option></select></label>
+      <div class="section-title"><div><span class="kicker">❤️ RECUPERACIÓN</span><h3>Datos de recuperación</h3></div></div>
+      <div class="recovery-block">
+        <h4>Del día anterior · Apple Watch</h4>
+        <div class="grid two">
+          <label>FC en reposo del día anterior (ppm)<input id="appleRestingHeartRate" type="number" min="25" max="220" inputmode="numeric" placeholder="Ej. 48"></label>
+          <label>HRV media del día anterior (ms)<input id="appleHrvAverage" type="number" min="0" max="400" step="0.1" inputmode="decimal" placeholder="Ej. 60"></label>
+        </div>
+        <p class="muted">Introduce los valores diarios que muestra Apple Salud para el día que estás cerrando.</p>
       </div>
-      <p class="muted">Opcional. Úsalo para tendencias personales, no como diagnóstico aislado.</p>
+      <div class="recovery-block">
+        <h4>Esta mañana · HRV4Training</h4>
+        <div class="grid two">
+          <label>Variabilidad HRV4Training<input id="hrv4TrainingScore" type="number" min="0" max="20" step="0.1" inputmode="decimal" placeholder="Ej. 8,5"></label>
+          <label>Interpretación<select id="hrv4TrainingStatus"><option value="">Sin registrar</option><option value="normal">Dentro del rango normal</option><option value="below">Por debajo del rango</option><option value="above">Por encima del rango</option></select></label>
+        </div>
+        <p class="muted">Es la puntuación matinal de HRV4Training, no el valor en milisegundos de Apple Salud.</p>
+      </div>
     </article>
 
     <article class="card form-card">
@@ -162,6 +172,7 @@
 </section>
 </main>
 <nav class="bottom-nav"><button class="nav-item active" data-go="home"><span>⌂</span><small>Inicio</small></button><button class="nav-item" data-go="record"><span>＋</span><small>Registrar</small></button><button class="nav-item" data-go="calendar"><span>▦</span><small>Calendario</small></button><button class="nav-item" data-go="stats"><span>⌁</span><small>Estadísticas</small></button><button class="nav-item" data-go="settings"><span>⚙</span><small>Ajustes</small></button></nav>
+<div id="textEditorBackdrop" class="text-editor-backdrop" aria-hidden="true"><div class="text-editor-panel"><div class="text-editor-head"><h3 id="textEditorTitle">Editar observaciones</h3><button id="textEditorClose" type="button" class="secondary-button">Cerrar</button></div><textarea id="textEditorArea" rows="12"></textarea><div class="text-editor-actions"><button id="textEditorCancel" type="button" class="secondary-button">Cancelar</button><button id="textEditorApply" type="button" class="primary">Aplicar</button></div></div></div>
 <div id="modalBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle"></h3><div id="modalBody" class="modal-grid"></div><div class="modal-actions"><button id="modalCancel" class="secondary-button">Cancelar</button><button id="modalSave" class="small-button">Guardar</button></div></div></div>
-<script src="app.js?v=1.0.6"></script>
+<script src="app.js?v=1.0.7"></script>
 </body></html>
