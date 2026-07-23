@@ -1,4 +1,4 @@
-# HealthLab Beta 1.0.5
+# HealthLab Beta 1.0.6
 
 Corrección del dictado en iPhone y iPad.
 
@@ -7,3 +7,13 @@ Corrección del dictado en iPhone y iPad.
 - Corte automático tras 12 segundos, al guardar, cambiar de pantalla, ocultar o cerrar la página.
 - En la PWA instalada, el botón enfoca el campo e indica usar el micrófono del teclado, evitando intentar una API no fiable.
 - Conserva todas las funciones y datos de la Beta 1.0.4.
+
+
+## Beta 1.0.6
+- Detalle independiente para mano derecha e izquierda.
+- Varias fotos desde cámara, Fototeca o Archivos.
+- Campos de observaciones ampliables y autoajustables.
+- Corrección de suplementos al editar registros existentes.
+- Registro opcional de tránsito intestinal (frecuencia y escala de Bristol).
+- Registro opcional de FC en reposo y HRV.
+- Migración automática al esquema 8.

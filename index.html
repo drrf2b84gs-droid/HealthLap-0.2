@@ -9,12 +9,12 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=1.0.5">
+  <link rel="stylesheet" href="styles.css?v=1.0.6">
 </head>
 <body>
 <header class="topbar">
   <img src="icon-192.png" class="brand-logo" alt="HealthLab">
-  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.5</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
+  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.6</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
   <button id="themeToggle" class="icon-button" aria-label="Cambiar apariencia">◐</button>
 </header>
 <main>
@@ -43,16 +43,26 @@
       <button type="button" id="toggleHandDetail" class="secondary-button inline-detail-button">＋ Añadir detalle de manos</button>
       <div id="handDetail" class="conditional hidden hand-detail">
         <div class="section-title"><div><span class="kicker">🤲 DETALLE</span><h3>Manos</h3></div></div>
-        <div class="grid two">
-          <label>Mano afectada<select id="handSide"><option value="">Selecciona</option><option>Derecha</option><option>Izquierda</option><option>Ambas</option></select></label>
-          <label>Zona principal<select id="handJoint"><option value="">Selecciona</option><option>MCP · nudillo</option><option>PIP · articulación intermedia</option><option>DIP · articulación distal</option><option>Dedo completo</option><option>Muñeca</option><option>Varias zonas</option></select></label>
+        <p class="muted">Registra cada mano por separado para poder asociar correctamente dedos y articulaciones.</p>
+        <div class="hand-side-grid">
+          <fieldset class="hand-side-card"><legend>✋ Mano derecha</legend>
+            <fieldset class="finger-fieldset"><legend>Dedos afectados</legend><div class="finger-grid">
+              <label><input type="checkbox" name="rightFinger" value="Pulgar"> Pulgar</label><label><input type="checkbox" name="rightFinger" value="Índice"> Índice</label><label><input type="checkbox" name="rightFinger" value="Corazón"> Corazón</label><label><input type="checkbox" name="rightFinger" value="Anular"> Anular</label><label><input type="checkbox" name="rightFinger" value="Meñique"> Meñique</label>
+            </div></fieldset>
+            <label>Zona principal<select id="rightJoint"><option value="">Selecciona</option><option>MCP · nudillo</option><option>PIP · articulación intermedia</option><option>DIP · articulación distal</option><option>Dedo completo</option><option>Muñeca</option><option>Varias zonas</option></select></label>
+            <label class="tick-card"><input id="rightMobilityLimited" type="checkbox"><span>🔒 Cuesta cerrar o flexionar</span></label>
+          </fieldset>
+          <fieldset class="hand-side-card"><legend>🤚 Mano izquierda</legend>
+            <fieldset class="finger-fieldset"><legend>Dedos afectados</legend><div class="finger-grid">
+              <label><input type="checkbox" name="leftFinger" value="Pulgar"> Pulgar</label><label><input type="checkbox" name="leftFinger" value="Índice"> Índice</label><label><input type="checkbox" name="leftFinger" value="Corazón"> Corazón</label><label><input type="checkbox" name="leftFinger" value="Anular"> Anular</label><label><input type="checkbox" name="leftFinger" value="Meñique"> Meñique</label>
+            </div></fieldset>
+            <label>Zona principal<select id="leftJoint"><option value="">Selecciona</option><option>MCP · nudillo</option><option>PIP · articulación intermedia</option><option>DIP · articulación distal</option><option>Dedo completo</option><option>Muñeca</option><option>Varias zonas</option></select></label>
+            <label class="tick-card"><input id="leftMobilityLimited" type="checkbox"><span>🔒 Cuesta cerrar o flexionar</span></label>
+          </fieldset>
         </div>
-        <fieldset class="finger-fieldset"><legend>Dedos afectados</legend><div class="finger-grid">
-          <label><input type="checkbox" name="handFinger" value="Pulgar"> Pulgar</label><label><input type="checkbox" name="handFinger" value="Índice"> Índice</label><label><input type="checkbox" name="handFinger" value="Corazón"> Corazón</label><label><input type="checkbox" name="handFinger" value="Anular"> Anular</label><label><input type="checkbox" name="handFinger" value="Meñique"> Meñique</label>
-        </div></fieldset>
-        <label class="tick-card"><input id="handMobilityLimited" type="checkbox"><span>🔒 Limitación para cerrar la mano o flexionar el dedo</span></label>
-        <label>📷 Foto opcional<input id="handPhoto" type="file" accept="image/*" capture="environment"></label><div id="handPhotoPreview"></div>
-        <label>Observaciones de manos<div class="voice-field"><textarea id="handNotes" rows="3" placeholder="Dedo, articulación, evolución, diferencias respecto a ayer..."></textarea><button type="button" class="voice-button" data-voice-target="handNotes">🎙️ Dictar</button></div></label>
+        <div class="photo-actions"><label class="file-label">📷 Hacer foto<input id="handCamera" type="file" accept="image/*" capture="environment"></label><label class="file-label">🖼️ Elegir fotos<input id="handGallery" type="file" accept="image/*" multiple></label></div>
+        <div id="handPhotoPreview" class="hand-photo-grid"></div>
+        <label>Observaciones de manos<div class="voice-field"><textarea id="handNotes" class="auto-grow" rows="4" placeholder="Ej. índice derecho PIP y corazón izquierdo DIP; evolución y diferencias respecto a ayer..."></textarea><div class="field-actions"><button type="button" class="voice-button" data-voice-target="handNotes">🎙️ Dictar</button><button type="button" class="expand-button" data-expand-target="handNotes">⛶ Ampliar</button></div></div></label>
       </div>
     </article>
 
@@ -64,6 +74,16 @@
       </div>
       <label class="switch-row compact-switch"><input id="usualSchedule" type="checkbox" checked><span>Horario habitual</span></label>
       <div id="sleepException" class="conditional hidden"><label>¿Qué cambió?<textarea id="sleepNotes" rows="2" placeholder="Me acosté tarde, me levanté tarde, Oliver se despertó..."></textarea></label></div>
+    </article>
+
+    <article class="card form-card">
+      <div class="section-title"><div><span class="kicker">❤️ MAÑANA</span><h3>Recuperación cardiovascular</h3></div></div>
+      <div class="grid three">
+        <label>FC en reposo (ppm)<input id="restingHeartRate" type="number" min="25" max="220" inputmode="numeric" placeholder="Ej. 48"></label>
+        <label>HRV (ms)<input id="hrv" type="number" min="0" max="400" step="0.1" inputmode="decimal" placeholder="Ej. 60"></label>
+        <label>Fuente<select id="hrvSource"><option value="">Sin registrar</option><option>HRV4Training</option><option>Apple Watch</option><option>Otra</option></select></label>
+      </div>
+      <p class="muted">Opcional. Úsalo para tendencias personales, no como diagnóstico aislado.</p>
     </article>
 
     <article class="card form-card">
@@ -83,6 +103,16 @@
       <div class="section-title"><div><span class="kicker">🌴 AYER</span><h3>Contexto del día</h3></div></div>
       <label>Contexto principal<select id="dayContext"><option value="routine">🏠 Rutina habitual</option><option value="vacation">🌴 Vacaciones</option><option value="travel">✈️ Viaje</option><option value="hotel">🏨 Hotel</option><option value="competition">🏃 Competición</option><option value="work">💼 Mucho trabajo</option><option value="illness">🤒 Enfermedad</option><option value="family">🎉 Evento familiar</option><option value="custom">✏️ Personalizado</option></select></label>
       <div id="customContextWrap" class="conditional hidden"><label>Contexto personalizado<input id="customContext" placeholder="Describe brevemente el contexto"></label></div>
+    </article>
+
+    <article class="card form-card">
+      <div class="section-title"><div><span class="kicker">🚽 AYER</span><h3>Tránsito intestinal</h3></div></div>
+      <div class="grid two">
+        <label>Número de deposiciones<select id="bowelFrequency"><option value="">Sin registrar</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4+">4 o más</option></select></label>
+        <label>Bristol predominante<select id="bristolType"><option value="">Sin registrar</option><option value="1">1 · Bolitas duras</option><option value="2">2 · Salchicha grumosa</option><option value="3">3 · Con grietas</option><option value="4">4 · Lisa y blanda</option><option value="5">5 · Trozos blandos</option><option value="6">6 · Pastosa</option><option value="7">7 · Líquida</option></select></label>
+      </div>
+      <div class="marker-row"><label class="tick-card"><input id="bowelUrgency" type="checkbox"><span>Urgencia</span></label><label class="tick-card"><input id="bowelPain" type="checkbox"><span>Dolor</span></label><label class="tick-card"><input id="bowelBlood" type="checkbox"><span>Sangre visible</span></label></div>
+      <label>Observaciones intestinales<textarea id="bowelNotes" class="auto-grow" rows="2" placeholder="Solo si hay algo relevante"></textarea></label>
     </article>
 
     <article class="card form-card">
@@ -109,7 +139,7 @@
       <div id="medications" class="check-list"></div>
     </article>
 
-    <article class="card form-card"><label>📝 Observaciones generales<div class="voice-field"><textarea id="notes" rows="4" placeholder="Solo si hay algo relevante"></textarea><button type="button" class="voice-button" data-voice-target="notes">🎙️ Dictar</button></div></label></article>
+    <article class="card form-card"><label>📝 Observaciones generales<div class="voice-field"><textarea id="notes" class="auto-grow" rows="4" placeholder="Solo si hay algo relevante"></textarea><div class="field-actions"><button type="button" class="voice-button" data-voice-target="notes">🎙️ Dictar</button><button type="button" class="expand-button" data-expand-target="notes">⛶ Ampliar</button></div></div></label></article>
     <button type="submit" class="primary save-button">Guardar registro</button>
   </form>
 </section>
@@ -133,5 +163,5 @@
 </main>
 <nav class="bottom-nav"><button class="nav-item active" data-go="home"><span>⌂</span><small>Inicio</small></button><button class="nav-item" data-go="record"><span>＋</span><small>Registrar</small></button><button class="nav-item" data-go="calendar"><span>▦</span><small>Calendario</small></button><button class="nav-item" data-go="stats"><span>⌁</span><small>Estadísticas</small></button><button class="nav-item" data-go="settings"><span>⚙</span><small>Ajustes</small></button></nav>
 <div id="modalBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle"></h3><div id="modalBody" class="modal-grid"></div><div class="modal-actions"><button id="modalCancel" class="secondary-button">Cancelar</button><button id="modalSave" class="small-button">Guardar</button></div></div></div>
-<script src="app.js?v=1.0.5"></script>
+<script src="app.js?v=1.0.6"></script>
 </body></html>
