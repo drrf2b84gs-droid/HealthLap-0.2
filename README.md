@@ -1,4 +1,4 @@
-# HealthLab Beta 1.0.7
+# HealthLab Beta 1.0.8
 
 Corrección del dictado en iPhone y iPad.
 
@@ -9,7 +9,7 @@ Corrección del dictado en iPhone y iPad.
 - Conserva todas las funciones y datos de la Beta 1.0.4.
 
 
-## Beta 1.0.7
+## Beta 1.0.8
 - Detalle independiente para mano derecha e izquierda.
 - Varias fotos desde cámara, Fototeca o Archivos.
 - Campos de observaciones ampliables y autoajustables.
@@ -19,7 +19,7 @@ Corrección del dictado en iPhone y iPad.
 - Migración automática al esquema 8.
 
 
-## Beta 1.0.7
+## Beta 1.0.8
 - Editor de observaciones a pantalla completa corregido: Cerrar, Aplicar, Cancelar, toque exterior y cambio de sección funcionan sin bloquear la aplicación.
 - Recuperación dividida entre datos Apple del día anterior y puntuación matinal de HRV4Training.
 - Migración automática de los campos cardiovasculares de la 1.0.6.
