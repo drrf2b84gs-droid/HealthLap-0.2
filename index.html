@@ -9,12 +9,12 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="stylesheet" href="styles-1.0.8.1.css">
+  <link rel="stylesheet" href="styles.css?v=1.0.8">
 </head>
 <body>
 <header class="topbar">
   <img src="icon-192.png" class="brand-logo" alt="HealthLab">
-  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.8.1</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
+  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.8</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
   <button id="themeToggle" class="icon-button" aria-label="Cambiar apariencia">◐</button>
 </header>
 <main>
@@ -30,11 +30,11 @@
     <article class="card form-card">
       <div class="form-head"><div><span class="kicker">HOY</span><h3>Estado al despertar</h3></div><input id="entryDate" type="date"></div>
       <div class="metric-form-grid">
-        <label class="scale-card"><span class="scale-title">Cansancio <button type="button" class="info-button" data-scale-info="fatigue">ⓘ</button></span><div class="scale-control"><input id="fatigue" data-scale-key="fatigue" type="range" min="0" max="10" value="0"><output>0</output></div></label>
+        <label class="scale-card"><span>Cansancio <button type="button" class="info-button" data-scale-info="fatigue" aria-label="Ayuda sobre cansancio">ⓘ</button></span><div class="scale-control"><input id="fatigue" type="range" min="0" max="10" value="0" data-scale-key="fatigue"><output>0</output></div><small class="scale-description" data-scale-description="fatigue"></small></label>
         <label class="tick-card marker-card"><input id="legFatigue" type="checkbox"><span>🦵 Piernas cargadas al despertar</span></label>
-        <label class="scale-card"><span class="scale-title">Inflamación manos <button type="button" class="info-button" data-scale-info="handSwelling">ⓘ</button></span><div class="scale-control"><input id="handSwelling" data-scale-key="handSwelling" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-        <label class="scale-card"><span class="scale-title">Dolor manos <button type="button" class="info-button" data-scale-info="handPain">ⓘ</button></span><div class="scale-control"><input id="handPain" data-scale-key="handPain" type="range" min="0" max="10" value="0"><output>0</output></div></label>
-        <label class="scale-card"><span class="scale-title">Descamación (0–3) <button type="button" class="info-button" data-scale-info="peeling">ⓘ</button></span><div class="scale-control"><input id="peeling" data-scale-key="peeling" type="range" min="0" max="3" value="0"><output>0</output></div></label>
+        <label class="scale-card"><span>Inflamación manos <button type="button" class="info-button" data-scale-info="handSwelling" aria-label="Ayuda sobre inflamación">ⓘ</button></span><div class="scale-control"><input id="handSwelling" type="range" min="0" max="10" value="0" data-scale-key="handSwelling"><output>0</output></div><small class="scale-description" data-scale-description="handSwelling"></small></label>
+        <label class="scale-card"><span>Dolor manos <button type="button" class="info-button" data-scale-info="handPain" aria-label="Ayuda sobre dolor">ⓘ</button></span><div class="scale-control"><input id="handPain" type="range" min="0" max="10" value="0" data-scale-key="handPain"><output>0</output></div><small class="scale-description" data-scale-description="handPain"></small></label>
+        <label class="scale-card"><span>Descamación (0–3) <button type="button" class="info-button" data-scale-info="peeling" aria-label="Ayuda sobre descamación">ⓘ</button></span><div class="scale-control"><input id="peeling" type="range" min="0" max="3" value="0" data-scale-key="peeling"><output>0</output></div><small class="scale-description" data-scale-description="peeling"></small></label>
       </div>
       <div class="marker-row">
         <label class="tick-card"><input id="calfTension" type="checkbox"><span>🦵 Tensión en gemelos al despertar</span></label>
@@ -99,7 +99,7 @@
     <article class="card form-card">
       <div class="section-title"><div><span class="kicker">⚡ AYER</span><h3>Estado durante el día anterior</h3></div></div>
       <div class="metric-form-grid">
-        <label class="scale-card"><span class="scale-title">Estrés percibido <button type="button" class="info-button" data-scale-info="stress">ⓘ</button></span><div class="scale-control"><input id="stress" data-scale-key="stress" type="range" min="0" max="10" value="0"><output>0</output></div></label>
+        <label class="scale-card"><span>Estrés percibido <button type="button" class="info-button" data-scale-info="stress" aria-label="Ayuda sobre estrés">ⓘ</button></span><div class="scale-control"><input id="stress" type="range" min="0" max="10" value="0" data-scale-key="stress"><output>0</output></div><small class="scale-description" data-scale-description="stress"></small></label>
         <label class="tick-card marker-card"><input id="eyeTic" type="checkbox"><span>👁️ Tic en el ojo</span></label>
       </div>
     </article>
@@ -111,9 +111,9 @@
 
     <article class="card form-card">
       <div class="section-title"><div><span class="kicker">🌴 AYER</span><h3>Contexto del día</h3></div></div>
-      <p class="muted">Puedes marcar más de una opción.</p>
-      <div id="dayContexts" class="multi-choice-grid">
-        <label class="tick-card"><input type="checkbox" name="dayContext" value="routine" checked><span>🏠 Rutina habitual</span></label>
+      <p class="muted">Puedes seleccionar varias opciones.</p>
+      <div id="dayContexts" class="multi-select-grid">
+        <label class="tick-card"><input type="checkbox" name="dayContext" value="routine"><span>🏠 Rutina habitual</span></label>
         <label class="tick-card"><input type="checkbox" name="dayContext" value="vacation"><span>🌴 Vacaciones</span></label>
         <label class="tick-card"><input type="checkbox" name="dayContext" value="travel"><span>✈️ Viaje</span></label>
         <label class="tick-card"><input type="checkbox" name="dayContext" value="hotel"><span>🏨 Hotel</span></label>
@@ -128,14 +128,19 @@
 
     <article class="card form-card">
       <div class="section-title"><div><span class="kicker">🤧 AYER</span><h3>Síntomas respiratorios</h3></div></div>
-      <label class="switch-row compact-switch"><input id="hasRespiratorySymptoms" type="checkbox"><span>Tuve síntomas respiratorios</span></label>
+      <label class="switch-row compact-switch"><input id="respiratorySymptoms" type="checkbox"><span>Tuve síntomas respiratorios</span></label>
       <div id="respiratoryDetail" class="conditional hidden">
         <div class="metric-form-grid">
-          <label class="scale-card"><span class="scale-title">Congestión nasal <button type="button" class="info-button" data-scale-info="nasalCongestion">ⓘ</button></span><div class="scale-control"><input id="nasalCongestion" data-scale-key="nasalCongestion" type="range" min="0" max="5" value="0"><output>0</output></div></label>
-          <label class="scale-card"><span class="scale-title">Mucosidad <button type="button" class="info-button" data-scale-info="mucus">ⓘ</button></span><div class="scale-control"><input id="mucus" data-scale-key="mucus" type="range" min="0" max="5" value="0"><output>0</output></div></label>
+          <label class="scale-card"><span>Congestión nasal <button type="button" class="info-button" data-scale-info="nasalCongestion" aria-label="Ayuda sobre congestión">ⓘ</button></span><div class="scale-control"><input id="nasalCongestion" type="range" min="0" max="5" value="0" data-scale-key="nasalCongestion"><output>0</output></div><small class="scale-description" data-scale-description="nasalCongestion"></small></label>
+          <label class="scale-card"><span>Mucosidad <button type="button" class="info-button" data-scale-info="mucus" aria-label="Ayuda sobre mucosidad">ⓘ</button></span><div class="scale-control"><input id="mucus" type="range" min="0" max="5" value="0" data-scale-key="mucus"><output>0</output></div><small class="scale-description" data-scale-description="mucus"></small></label>
         </div>
-        <div class="marker-row"><label class="tick-card"><input id="nasalDrip" type="checkbox"><span>Goteo nasal</span></label><label class="tick-card"><input id="sneezing" type="checkbox"><span>Estornudos</span></label><label class="tick-card"><input id="cough" type="checkbox"><span>Tos</span></label><label class="tick-card"><input id="shortnessOfBreath" type="checkbox"><span>Falta de aire cotidiana</span></label></div>
-        <label>Observaciones respiratorias<div class="voice-field"><textarea id="respiratoryNotes" class="auto-grow" rows="3" placeholder="Color o espesor de la mucosidad, momento del día, evolución..."></textarea><div class="field-actions"><button type="button" class="voice-button" data-voice-target="respiratoryNotes">🎙️ Dictar</button><button type="button" class="expand-button" data-expand-target="respiratoryNotes">⛶ Ampliar</button></div></div></label>
+        <div class="marker-row">
+          <label class="tick-card"><input id="postNasalDrip" type="checkbox"><span>Goteo nasal</span></label>
+          <label class="tick-card"><input id="sneezing" type="checkbox"><span>Estornudos</span></label>
+          <label class="tick-card"><input id="cough" type="checkbox"><span>Tos</span></label>
+          <label class="tick-card"><input id="dailyBreathlessness" type="checkbox"><span>Falta de aire cotidiana</span></label>
+        </div>
+        <label>Observaciones respiratorias<div class="voice-field"><textarea id="respiratoryNotes" class="auto-grow" rows="3" placeholder="Duración, color o tipo de mucosidad, desencadenantes, evolución..."></textarea><div class="field-actions"><button type="button" class="voice-button" data-voice-target="respiratoryNotes">🎙️ Dictar</button><button type="button" class="expand-button" data-expand-target="respiratoryNotes">⛶ Ampliar</button></div></div></label>
       </div>
     </article>
 
@@ -153,11 +158,19 @@
       <div class="section-title"><div><span class="kicker">🍽️ AYER</span><h3>Alimentación</h3></div></div>
       <label class="switch-row compact-switch"><input id="usualFood" type="checkbox" checked><span>Alimentación habitual</span></label>
       <div id="foodException" class="conditional hidden">
-        <p class="muted">Puedes marcar más de una opción.</p>
-        <div id="foodChanges" class="multi-choice-grid">
-          <label class="tick-card"><input type="checkbox" name="foodChange" value="Comida rápida"><span>Comida rápida</span></label><label class="tick-card"><input type="checkbox" name="foodChange" value="Más azúcar"><span>Más azúcar</span></label><label class="tick-card"><input type="checkbox" name="foodChange" value="Alcohol"><span>Alcohol</span></label><label class="tick-card"><input type="checkbox" name="foodChange" value="Comida copiosa"><span>Comida copiosa</span></label><label class="tick-card"><input type="checkbox" name="foodChange" value="Restaurante"><span>Restaurante</span></label><label class="tick-card"><input type="checkbox" name="foodChange" value="Horarios distintos"><span>Horarios distintos</span></label><label class="tick-card"><input type="checkbox" name="foodChange" value="Alimento nuevo"><span>Alimento nuevo</span></label><label class="tick-card"><input type="checkbox" name="foodChange" value="Menor ingesta"><span>Menor ingesta</span></label><label class="tick-card"><input type="checkbox" name="foodChange" value="Otro"><span>Otro</span></label>
+        <p class="muted">Puedes seleccionar varios cambios.</p>
+        <div id="foodChanges" class="multi-select-grid">
+          <label class="tick-card"><input type="checkbox" name="foodChange" value="Restaurante"><span>Restaurante</span></label>
+          <label class="tick-card"><input type="checkbox" name="foodChange" value="Alcohol"><span>Alcohol</span></label>
+          <label class="tick-card"><input type="checkbox" name="foodChange" value="Comida rápida"><span>Comida rápida</span></label>
+          <label class="tick-card"><input type="checkbox" name="foodChange" value="Mucho azúcar"><span>Más azúcar</span></label>
+          <label class="tick-card"><input type="checkbox" name="foodChange" value="Comida copiosa"><span>Comida copiosa</span></label>
+          <label class="tick-card"><input type="checkbox" name="foodChange" value="Horarios distintos"><span>Horarios distintos</span></label>
+          <label class="tick-card"><input type="checkbox" name="foodChange" value="Alimento nuevo"><span>Alimento nuevo</span></label>
+          <label class="tick-card"><input type="checkbox" name="foodChange" value="Menor ingesta"><span>Menor ingesta</span></label>
+          <label class="tick-card"><input type="checkbox" name="foodChange" value="Otro"><span>Otro</span></label>
         </div>
-        <label>Detalle opcional<textarea id="foodNotes" class="auto-grow" rows="2"></textarea></label>
+        <label>Detalle opcional<textarea id="foodNotes" rows="2"></textarea></label>
       </div>
     </article>
 
@@ -200,8 +213,7 @@
 </main>
 <nav class="bottom-nav"><button class="nav-item active" data-go="home"><span>⌂</span><small>Inicio</small></button><button class="nav-item" data-go="record"><span>＋</span><small>Registrar</small></button><button class="nav-item" data-go="calendar"><span>▦</span><small>Calendario</small></button><button class="nav-item" data-go="stats"><span>⌁</span><small>Estadísticas</small></button><button class="nav-item" data-go="settings"><span>⚙</span><small>Ajustes</small></button></nav>
 <div id="textEditorBackdrop" class="text-editor-backdrop" aria-hidden="true"><div class="text-editor-panel"><div class="text-editor-head"><h3 id="textEditorTitle">Editar observaciones</h3><button id="textEditorClose" type="button" class="secondary-button">Cerrar</button></div><textarea id="textEditorArea" rows="12"></textarea><div class="text-editor-actions"><button id="textEditorCancel" type="button" class="secondary-button">Cancelar</button><button id="textEditorApply" type="button" class="primary">Aplicar</button></div></div></div>
+<div id="scaleInfoBackdrop" class="scale-info-backdrop" aria-hidden="true"><div class="scale-info-panel"><div class="text-editor-head"><h3 id="scaleInfoTitle">Guía de escala</h3><button id="scaleInfoClose" type="button" class="secondary-button">Cerrar</button></div><div id="scaleInfoBody" class="scale-info-body"></div></div></div>
 <div id="modalBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle"></h3><div id="modalBody" class="modal-grid"></div><div class="modal-actions"><button id="modalCancel" class="secondary-button">Cancelar</button><button id="modalSave" class="small-button">Guardar</button></div></div></div>
-<script src="app-1.0.8.1.js"></script>
-
-<div id="scaleInfoBackdrop" class="modal-backdrop info-backdrop" aria-hidden="true"><div class="modal info-modal"><h3 id="scaleInfoTitle">Guía de escala</h3><div id="scaleInfoBody" class="scale-info-body"></div><div class="modal-actions"><button type="button" id="scaleInfoClose" class="primary">Cerrar</button></div></div></div>
+<script src="app.js?v=1.0.8"></script>
 </body></html>
