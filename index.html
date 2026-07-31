@@ -9,12 +9,12 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=1.0.8">
+  <link rel="stylesheet" href="styles.css?v=1.0.9">
 </head>
 <body>
 <header class="topbar">
   <img src="icon-192.png" class="brand-logo" alt="HealthLab">
-  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.8</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
+  <div><p class="eyebrow">HEALTHLAB · BETA 1.0.9</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
   <button id="themeToggle" class="icon-button" aria-label="Cambiar apariencia">◐</button>
 </header>
 <main>
@@ -208,12 +208,12 @@
   <article class="card"><div class="section-title split"><div><span class="kicker">🥤 DEPORTE</span><h3>Nutrición deportiva</h3></div><button class="small-button" data-add="sportSupplements">Añadir</button></div><div id="sportSupplementsList" class="config-list"></div></article>
   <article class="card"><div class="section-title split"><div><span class="kicker">💉 MEDICACIÓN</span><h3>Tratamientos</h3></div><button class="small-button" data-add="medications">Añadir</button></div><div id="medicationsList" class="config-list"></div></article>
   <article class="card"><div class="section-title split"><div><span class="kicker">🏃 ENTRENAMIENTOS</span><h3>Tipos disponibles</h3></div><button class="small-button" data-add="trainingTypes">Añadir</button></div><div id="trainingTypesList" class="config-list"></div></article>
-  <article class="card"><span class="kicker">DATOS</span><h3>Copias y traslado entre dispositivos</h3><p class="muted">Los datos se guardan solo en este dispositivo. Para pasar del iPad al iPhone, exporta JSON en el iPad e impórtalo en el iPhone.</p><div class="button-row"><button id="exportAll" class="secondary-button">Exportar JSON completo</button><button id="exportCsv" class="secondary-button">Exportar CSV</button><label class="secondary-button file-label">Importar JSON<input id="importAll" type="file" accept=".json,application/json"></label><button id="resetDemo" class="danger">Restablecer todo</button></div></article>
+  <article class="card"><span class="kicker">DATOS</span><h3>Copias y traslado entre dispositivos</h3><p class="muted">Los datos se guardan solo en este dispositivo. El JSON es plano, abierto y legible. El JSON completo conserva las fotos en Base64; la versión para análisis las omite para facilitar su lectura y procesamiento.</p><div class="button-row"><button id="exportAll" class="secondary-button">Exportar JSON completo</button><button id="exportAnalysis" class="secondary-button">JSON para análisis (sin fotos)</button><button id="exportCsv" class="secondary-button">Exportar CSV</button><label class="secondary-button file-label">Importar JSON<input id="importAll" type="file" accept=".json,application/json"></label><button id="resetDemo" class="danger">Restablecer todo</button></div></article>
 </section>
 </main>
 <nav class="bottom-nav"><button class="nav-item active" data-go="home"><span>⌂</span><small>Inicio</small></button><button class="nav-item" data-go="record"><span>＋</span><small>Registrar</small></button><button class="nav-item" data-go="calendar"><span>▦</span><small>Calendario</small></button><button class="nav-item" data-go="stats"><span>⌁</span><small>Estadísticas</small></button><button class="nav-item" data-go="settings"><span>⚙</span><small>Ajustes</small></button></nav>
 <div id="textEditorBackdrop" class="text-editor-backdrop" aria-hidden="true"><div class="text-editor-panel"><div class="text-editor-head"><h3 id="textEditorTitle">Editar observaciones</h3><button id="textEditorClose" type="button" class="secondary-button">Cerrar</button></div><textarea id="textEditorArea" rows="12"></textarea><div class="text-editor-actions"><button id="textEditorCancel" type="button" class="secondary-button">Cancelar</button><button id="textEditorApply" type="button" class="primary">Aplicar</button></div></div></div>
 <div id="scaleInfoBackdrop" class="scale-info-backdrop" aria-hidden="true"><div class="scale-info-panel"><div class="text-editor-head"><h3 id="scaleInfoTitle">Guía de escala</h3><button id="scaleInfoClose" type="button" class="secondary-button">Cerrar</button></div><div id="scaleInfoBody" class="scale-info-body"></div></div></div>
 <div id="modalBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle"></h3><div id="modalBody" class="modal-grid"></div><div class="modal-actions"><button id="modalCancel" class="secondary-button">Cancelar</button><button id="modalSave" class="small-button">Guardar</button></div></div></div>
-<script src="app.js?v=1.0.8"></script>
+<script src="app.js?v=1.0.9"></script>
 </body></html>

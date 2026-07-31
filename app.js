@@ -1,3 +1,5 @@
+const APP_VERSION='1.0.9';
+const EXPORT_FORMAT='healthlab-json';
 const STORAGE_KEY='healthLabData';
 const THEME_KEY='healthLabTheme';
 const $=id=>document.getElementById(id);
@@ -165,10 +167,28 @@ function bindConfigButtons(){document.querySelectorAll('[data-toggle]').forEach(
 document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openConfigModal(b.dataset.add));let modalState=null;
 function openConfigModal(key,id=''){const item=id?data[key].find(x=>x.id===id):null;modalState={key,id};$('modalTitle').textContent=(item?'Editar ':'Añadir ')+(configMeta[key]?.title||'elemento');const isTrain=key==='trainingTypes';$('modalBody').innerHTML=`<label>Nombre<input id="cfgName" value="${esc(item?.name||'')}"></label>${isTrain?`<label>Tipo de formulario<select id="cfgKind"><option value="run">Carrera</option><option value="bike">Bici</option><option value="strength">Fuerza</option><option value="functional">Fuerza funcional / gomas</option><option value="mobility">Movilidad</option><option value="trekking">Trekking</option><option value="other">Otros</option></select></label>`:`<div class="grid two"><label>Dosis habitual<input id="cfgDose" type="number" step="0.1" value="${item?.dose??0}"></label><label>Unidad<input id="cfgUnit" value="${esc(item?.unit||'')}"></label></div><label class="tick-card"><input id="cfgDefault" type="checkbox" ${item?.defaultTaken?'checked':''}><span>Marcado por defecto en Registro</span></label><label>Composición / detalle<textarea id="cfgComposition" rows="3">${esc(item?.composition||'')}</textarea></label>`}`;$('modalBackdrop').classList.add('open');if(isTrain&&item)$('cfgKind').value=item.kind||'other'}
 $('modalCancel').onclick=()=>$('modalBackdrop').classList.remove('open');$('modalSave').onclick=()=>{const {key,id}=modalState,name=$('cfgName').value.trim();if(!name)return alert('Escribe un nombre.');let item=id?data[key].find(x=>x.id===id):null;if(!item){item={id:`${key}-${Date.now()}`,enabled:true,order:data[key].length+1};data[key].push(item)}item.name=name;if(key==='trainingTypes')item.kind=$('cfgKind').value;else{item.dose=Number($('cfgDose').value||0);item.unit=$('cfgUnit').value.trim();item.composition=$('cfgComposition').value.trim();item.defaultTaken=$('cfgDefault').checked}saveData();$('modalBackdrop').classList.remove('open');renderSettings()};
-$('exportAll').onclick=()=>download(JSON.stringify(data,null,2),`healthlab_backup_${localISO()}.json`,'application/json');
+function buildJsonExport({includePhotos=true,exportType='full'}={}){
+ const payload=clone(data);
+ if(!includePhotos){
+  for(const entry of payload.entries||[]){
+   if(entry.handDetails){entry.handDetails.photos=[]}
+  }
+ }
+ return {
+  ...payload,
+  schemaVersion:payload.schemaVersion||10,
+  appVersion:APP_VERSION,
+  exportedAt:new Date().toISOString(),
+  exportFormat:EXPORT_FORMAT,
+  exportType,
+  photosIncluded:includePhotos
+ };
+}
+$('exportAll').onclick=()=>download(JSON.stringify(buildJsonExport({includePhotos:true,exportType:'full'}),null,2),`healthlab_backup_${localISO()}.json`,'application/json');
+$('exportAnalysis').onclick=()=>download(JSON.stringify(buildJsonExport({includePhotos:false,exportType:'analysis'}),null,2),`healthlab_analysis_${localISO()}.json`,'application/json');
 $('exportCsv').onclick=()=>{const rows=[['date','sleepQuality','sleepDuration','fatigue','legFatigue','handSwelling','handPain','stress','eyeTic','calfTension','jawTension','peeling','trainings','dailySupplements','sportSupplements','medications','dayContexts','customContext','handDetails','appleRestingHeartRate','appleHrvAverage','hrv4TrainingScore','hrv4TrainingStatus','bowelFrequency','bristolType','bowelUrgency','bowelPain','bowelBlood','bowelNotes','respiratorySymptoms','nasalCongestion','mucus','postNasalDrip','sneezing','cough','dailyBreathlessness','respiratoryNotes','foodChanges','notes']];for(const e of data.entries)rows.push([e.date,e.sleepQuality,e.sleepDuration,e.fatigue,e.legFatigue,e.handSwelling,e.handPain,e.stress,e.eyeTic,e.calfTension,e.jawTension,e.peeling,JSON.stringify(e.trainings||[]),JSON.stringify(e.dailySupplements||[]),JSON.stringify(e.sportSupplements||[]),JSON.stringify(e.medicationsTaken||[]),JSON.stringify(e.dayContexts||[e.dayContext||'routine']),e.customContext,JSON.stringify(e.handDetails||{}),e.appleRestingHeartRate,e.appleHrvAverage,e.hrv4TrainingScore,e.hrv4TrainingStatus,e.bowelFrequency,e.bristolType,e.bowelUrgency,e.bowelPain,e.bowelBlood,e.bowelNotes,e.respiratorySymptoms,e.nasalCongestion,e.mucus,e.postNasalDrip,e.sneezing,e.cough,e.dailyBreathlessness,e.respiratoryNotes,JSON.stringify(e.foodChanges||[e.foodChange].filter(Boolean)),e.notes]);const csv=rows.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n');download(csv,`healthlab_${localISO()}.csv`,'text/csv;charset=utf-8')};
 function download(content,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
-$('importAll').onchange=async e=>{try{const obj=JSON.parse(await e.target.files[0].text());if(!obj||!Array.isArray(obj.entries))throw 0;if(confirm('Esto sustituirá todos los datos actuales. ¿Continuar?')){data=migrate(obj);saveData();alert('Datos importados.');renderSettings();updateHome()}}catch{alert('Archivo JSON no válido.')}};
+$('importAll').onchange=async e=>{try{const obj=JSON.parse(await e.target.files[0].text());const payload=obj?.data&&Array.isArray(obj.data.entries)?obj.data:obj;if(!payload||!Array.isArray(payload.entries))throw 0;if(confirm('Esto sustituirá todos los datos actuales. ¿Continuar?')){data=migrate(payload);saveData();alert('Datos importados.');renderSettings();updateHome()}}catch{alert('Archivo JSON no válido.')}};
 $('resetDemo').onclick=()=>{if(confirm('¿Restablecer toda la aplicación?')){data=clone(defaults);saveData();location.reload()}};
 
 $('handSwelling').addEventListener('input',()=>toggleHandDetail());$('handPain').addEventListener('input',()=>toggleHandDetail());$('toggleHandDetail').onclick=()=>toggleHandDetail($('handDetail').classList.contains('hidden'));$('respiratorySymptoms').onchange=()=>$('respiratoryDetail').classList.toggle('hidden',!$('respiratorySymptoms').checked);document.querySelectorAll('[name=dayContext]').forEach(x=>x.onchange=()=>{if(x.value==='routine'&&x.checked)document.querySelectorAll('[name=dayContext]').forEach(y=>{if(y!==x)y.checked=false});else if(x.checked){const r=document.querySelector('[name=dayContext][value=routine]');if(r)r.checked=false}const custom=document.querySelector('[name=dayContext][value=custom]')?.checked;$('customContextWrap').classList.toggle('hidden',!custom)});$('entryDate').onchange=updateTemporalLabels;$('handCamera').onchange=async e=>{await addHandPhotos(e.target.files||[]);e.target.value=''};$('handGallery').onchange=async e=>{await addHandPhotos(e.target.files||[]);e.target.value=''};bindVoiceButtons();bindExpandableTextareas();
