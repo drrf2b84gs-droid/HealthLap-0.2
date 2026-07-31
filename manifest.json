@@ -1,7 +1,7 @@
 {
-  "name": "HealthLab Beta 1.1.2",
+  "name": "HealthLab Beta 1.1.3",
   "short_name": "HealthLab",
-  "start_url": "./index.html?v=1.1.2",
+  "start_url": "./index.html?v=1.1.3",
   "display": "standalone",
   "background_color": "#f4f7f7",
   "theme_color": "#0f766e",
