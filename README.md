@@ -1,5 +1,9 @@
-# HealthLab Beta 1.0.8
+# HealthLab Beta 1.1.5
 
-Versión reconstruida directamente sobre la Beta 1.0.7 estable.
+Versión construida sobre la Beta 1.1.4 estable.
 
-Incluye síntomas respiratorios, fuerza funcional/gomas, contexto y alimentación multiseleccionables y guías de interpretación para escalas.
+Cambios principales:
+- marcador diario de inflamación abdominal 0–4 con guía de interpretación;
+- peso opcional en kg, pensado para registro semanal;
+- ambos campos integrados en edición, calendario, estadísticas y exportaciones JSON/CSV;
+- migración automática al schemaVersion 14.
