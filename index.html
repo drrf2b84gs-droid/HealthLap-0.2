@@ -9,12 +9,12 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=1.1.5">
+  <link rel="stylesheet" href="styles.css?v=1.2.0">
 </head>
 <body>
 <header class="topbar">
   <img src="icon-192.png" class="brand-logo" alt="HealthLab">
-  <div><p class="eyebrow">HEALTHLAB · BETA 1.1.5</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
+  <div><p class="eyebrow">HEALTHLAB · BETA 1.2.0</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
   <button id="themeToggle" class="icon-button" aria-label="Cambiar apariencia">◐</button>
 </header>
 <main>
@@ -29,42 +29,54 @@
   <form id="quickForm">
     <article class="card form-card">
       <div class="form-head"><div><span class="kicker">HOY</span><h3>Estado al despertar</h3></div><input id="entryDate" type="date"></div>
-      <div class="metric-form-grid">
+      <div class="metric-form-grid wake-grid">
         <label class="scale-card"><span>Cansancio <button type="button" class="info-button" data-scale-info="fatigue" aria-label="Ayuda sobre cansancio">ⓘ</button></span><div class="scale-control"><input id="fatigue" type="range" min="0" max="10" value="0" data-scale-key="fatigue"><output>0</output></div><small class="scale-description" data-scale-description="fatigue"></small></label>
-        <label class="tick-card marker-card"><input id="legFatigue" type="checkbox"><span>🦵 Piernas cargadas al despertar</span></label>
-        <label class="scale-card"><span>Inflamación manos <button type="button" class="info-button" data-scale-info="handSwelling" aria-label="Ayuda sobre inflamación">ⓘ</button></span><div class="scale-control"><input id="handSwelling" type="range" min="0" max="10" value="0" data-scale-key="handSwelling"><output>0</output></div><small class="scale-description" data-scale-description="handSwelling"></small></label>
-        <label class="scale-card"><span>Dolor manos <button type="button" class="info-button" data-scale-info="handPain" aria-label="Ayuda sobre dolor">ⓘ</button></span><div class="scale-control"><input id="handPain" type="range" min="0" max="10" value="0" data-scale-key="handPain"><output>0</output></div><small class="scale-description" data-scale-description="handPain"></small></label>
         <label class="scale-card"><span>Inflamación abdominal <button type="button" class="info-button" data-scale-info="abdominalInflammation" aria-label="Ayuda sobre inflamación abdominal">ⓘ</button></span><div class="scale-control"><input id="abdominalInflammation" type="range" min="0" max="4" value="0" data-scale-key="abdominalInflammation"><output>0</output></div><small class="scale-description" data-scale-description="abdominalInflammation"></small></label>
-        <label class="input-card anthropometry-card"><span>⚖️ Peso <small class="muted">(opcional · registro semanal)</small></span><div class="number-with-unit"><input id="weightKg" type="number" min="30" max="250" step="0.1" inputmode="decimal" placeholder="Ej. 79,8"><span>kg</span></div></label>
-        <label class="scale-card"><span>Descamación (0–3) <button type="button" class="info-button" data-scale-info="peeling" aria-label="Ayuda sobre descamación">ⓘ</button></span><div class="scale-control"><input id="peeling" type="range" min="0" max="3" value="0" data-scale-key="peeling"><output>0</output></div><small class="scale-description" data-scale-description="peeling"></small></label>
       </div>
-      <div class="marker-row">
-        <label class="tick-card"><input id="calfTension" type="checkbox"><span>🦵 Tensión en gemelos al despertar</span></label>
-        <label class="tick-card"><input id="jawTension" type="checkbox"><span>😬 Tensión mandibular</span></label>
-      </div>
-      <button type="button" id="toggleHandDetail" class="secondary-button inline-detail-button">＋ Añadir detalle de manos</button>
-      <div id="handDetail" class="conditional hidden hand-detail">
-        <div class="section-title"><div><span class="kicker">🤲 DETALLE</span><h3>Manos</h3></div></div>
-        <p class="muted">Registra cada mano por separado para poder asociar correctamente dedos y articulaciones.</p>
-        <div class="hand-side-grid">
-          <fieldset class="hand-side-card"><legend>✋ Mano derecha</legend>
-            <fieldset class="finger-fieldset"><legend>Dedos afectados</legend><div class="finger-grid">
-              <label><input type="checkbox" name="rightFinger" value="Pulgar"> Pulgar</label><label><input type="checkbox" name="rightFinger" value="Índice"> Índice</label><label><input type="checkbox" name="rightFinger" value="Corazón"> Corazón</label><label><input type="checkbox" name="rightFinger" value="Anular"> Anular</label><label><input type="checkbox" name="rightFinger" value="Meñique"> Meñique</label>
-            </div></fieldset>
-            <label>Zona principal<select id="rightJoint"><option value="">Selecciona</option><option>MCP · nudillo</option><option>PIP · articulación intermedia</option><option>DIP · articulación distal</option><option>Dedo completo</option><option>Muñeca</option><option>Varias zonas</option></select></label>
-            <label class="tick-card"><input id="rightMobilityLimited" type="checkbox"><span>🔒 Cuesta cerrar o flexionar</span></label>
-          </fieldset>
-          <fieldset class="hand-side-card"><legend>🤚 Mano izquierda</legend>
-            <fieldset class="finger-fieldset"><legend>Dedos afectados</legend><div class="finger-grid">
-              <label><input type="checkbox" name="leftFinger" value="Pulgar"> Pulgar</label><label><input type="checkbox" name="leftFinger" value="Índice"> Índice</label><label><input type="checkbox" name="leftFinger" value="Corazón"> Corazón</label><label><input type="checkbox" name="leftFinger" value="Anular"> Anular</label><label><input type="checkbox" name="leftFinger" value="Meñique"> Meñique</label>
-            </div></fieldset>
-            <label>Zona principal<select id="leftJoint"><option value="">Selecciona</option><option>MCP · nudillo</option><option>PIP · articulación intermedia</option><option>DIP · articulación distal</option><option>Dedo completo</option><option>Muñeca</option><option>Varias zonas</option></select></label>
-            <label class="tick-card"><input id="leftMobilityLimited" type="checkbox"><span>🔒 Cuesta cerrar o flexionar</span></label>
-          </fieldset>
+
+      <div class="anthropometry-panel">
+        <div class="section-title compact-title"><div><span class="kicker">📏 ANTROPOMETRÍA</span><h4>Medición semanal</h4></div></div>
+        <p class="muted">Déjalo vacío si hoy no mides. Se muestra debajo la última medición real registrada.</p>
+        <div class="grid three anthropometry-grid">
+          <label class="input-card anthropometry-card"><span>⚖️ Peso</span><div class="number-with-unit"><input id="weightKg" type="number" min="30" max="250" step="0.1" inputmode="decimal" placeholder="Ej. 79,8"><span>kg</span></div><small id="lastWeightHint" class="measurement-hint">Sin mediciones previas</small></label>
+          <label class="input-card anthropometry-card"><span>🫃 Cintura <button type="button" class="info-button" data-scale-info="waistMeasurement" aria-label="Cómo medir la cintura">ⓘ</button></span><div class="number-with-unit"><input id="waistCm" type="number" min="40" max="200" step="0.1" inputmode="decimal" placeholder="Ej. 90,5"><span>cm</span></div><small id="lastWaistHint" class="measurement-hint">Sin mediciones previas</small></label>
+          <label class="input-card anthropometry-card"><span>🍑 Cadera <button type="button" class="info-button" data-scale-info="hipMeasurement" aria-label="Cómo medir la cadera">ⓘ</button></span><div class="number-with-unit"><input id="hipCm" type="number" min="50" max="220" step="0.1" inputmode="decimal" placeholder="Ej. 101,0"><span>cm</span></div><small id="lastHipHint" class="measurement-hint">Sin mediciones previas</small></label>
         </div>
-        <div class="photo-actions"><label class="file-label">📷 Hacer foto<input id="handCamera" type="file" accept="image/*" capture="environment"></label><label class="file-label">🖼️ Elegir fotos<input id="handGallery" type="file" accept="image/*" multiple></label></div>
-        <div id="handPhotoPreview" class="hand-photo-grid"></div>
-        <label>Observaciones de manos<div class="voice-field"><textarea id="handNotes" class="auto-grow" rows="4" placeholder="Ej. índice derecho PIP y corazón izquierdo DIP; evolución y diferencias respecto a ayer..."></textarea><div class="field-actions"><button type="button" class="voice-button" data-voice-target="handNotes">🎙️ Dictar</button><button type="button" class="expand-button" data-expand-target="handNotes">⛶ Ampliar</button></div></div></label>
+      </div>
+
+      <div class="compact-symptom-block">
+        <label class="switch-row compact-switch"><input id="handSymptoms" type="checkbox"><span>✋ Síntomas en manos</span></label>
+        <div id="handSymptomsDetail" class="conditional hidden">
+          <div class="metric-form-grid">
+            <label class="scale-card"><span>Inflamación manos <button type="button" class="info-button" data-scale-info="handSwelling" aria-label="Ayuda sobre inflamación">ⓘ</button></span><div class="scale-control"><input id="handSwelling" type="range" min="0" max="10" value="0" data-scale-key="handSwelling"><output>0</output></div><small class="scale-description" data-scale-description="handSwelling"></small></label>
+            <label class="scale-card"><span>Dolor manos <button type="button" class="info-button" data-scale-info="handPain" aria-label="Ayuda sobre dolor">ⓘ</button></span><div class="scale-control"><input id="handPain" type="range" min="0" max="10" value="0" data-scale-key="handPain"><output>0</output></div><small class="scale-description" data-scale-description="handPain"></small></label>
+            <label class="scale-card"><span>Descamación (0–3) <button type="button" class="info-button" data-scale-info="peeling" aria-label="Ayuda sobre descamación">ⓘ</button></span><div class="scale-control"><input id="peeling" type="range" min="0" max="3" value="0" data-scale-key="peeling"><output>0</output></div><small class="scale-description" data-scale-description="peeling"></small></label>
+          </div>
+          <button type="button" id="toggleHandDetail" class="secondary-button inline-detail-button">＋ Añadir detalle de manos</button>
+          <div id="handDetail" class="conditional hidden hand-detail">
+            <div class="section-title"><div><span class="kicker">🤲 DETALLE</span><h3>Manos</h3></div></div>
+            <p class="muted">Registra cada mano por separado para poder asociar correctamente dedos y articulaciones.</p>
+            <div class="hand-side-grid">
+              <fieldset class="hand-side-card"><legend>✋ Mano derecha</legend>
+                <fieldset class="finger-fieldset"><legend>Dedos afectados</legend><div class="finger-grid">
+                  <label><input type="checkbox" name="rightFinger" value="Pulgar"> Pulgar</label><label><input type="checkbox" name="rightFinger" value="Índice"> Índice</label><label><input type="checkbox" name="rightFinger" value="Corazón"> Corazón</label><label><input type="checkbox" name="rightFinger" value="Anular"> Anular</label><label><input type="checkbox" name="rightFinger" value="Meñique"> Meñique</label>
+                </div></fieldset>
+                <label>Zona principal<select id="rightJoint"><option value="">Selecciona</option><option>MCP · nudillo</option><option>PIP · articulación intermedia</option><option>DIP · articulación distal</option><option>Dedo completo</option><option>Muñeca</option><option>Varias zonas</option></select></label>
+                <label class="tick-card"><input id="rightMobilityLimited" type="checkbox"><span>🔒 Cuesta cerrar o flexionar</span></label>
+              </fieldset>
+              <fieldset class="hand-side-card"><legend>🤚 Mano izquierda</legend>
+                <fieldset class="finger-fieldset"><legend>Dedos afectados</legend><div class="finger-grid">
+                  <label><input type="checkbox" name="leftFinger" value="Pulgar"> Pulgar</label><label><input type="checkbox" name="leftFinger" value="Índice"> Índice</label><label><input type="checkbox" name="leftFinger" value="Corazón"> Corazón</label><label><input type="checkbox" name="leftFinger" value="Anular"> Anular</label><label><input type="checkbox" name="leftFinger" value="Meñique"> Meñique</label>
+                </div></fieldset>
+                <label>Zona principal<select id="leftJoint"><option value="">Selecciona</option><option>MCP · nudillo</option><option>PIP · articulación intermedia</option><option>DIP · articulación distal</option><option>Dedo completo</option><option>Muñeca</option><option>Varias zonas</option></select></label>
+                <label class="tick-card"><input id="leftMobilityLimited" type="checkbox"><span>🔒 Cuesta cerrar o flexionar</span></label>
+              </fieldset>
+            </div>
+            <div class="photo-actions"><label class="file-label">📷 Hacer foto<input id="handCamera" type="file" accept="image/*" capture="environment"></label><label class="file-label">🖼️ Elegir fotos<input id="handGallery" type="file" accept="image/*" multiple></label></div>
+            <div id="handPhotoPreview" class="hand-photo-grid"></div>
+            <label>Observaciones de manos<div class="voice-field"><textarea id="handNotes" class="auto-grow" rows="4" placeholder="Ej. índice derecho PIP y corazón izquierdo DIP; evolución y diferencias respecto a ayer..."></textarea><div class="field-actions"><button type="button" class="voice-button" data-voice-target="handNotes">🎙️ Dictar</button><button type="button" class="expand-button" data-expand-target="handNotes">⛶ Ampliar</button></div></div></label>
+          </div>
+        </div>
       </div>
     </article>
 
@@ -98,11 +110,97 @@
       </div>
     </article>
 
-    <article class="card form-card">
-      <div class="section-title"><div><span class="kicker">⚡ AYER</span><h3>Estado durante el día anterior</h3></div></div>
-      <div class="metric-form-grid">
-        <label class="scale-card"><span>Estrés percibido <button type="button" class="info-button" data-scale-info="stress" aria-label="Ayuda sobre estrés">ⓘ</button></span><div class="scale-control"><input id="stress" type="range" min="0" max="10" value="0" data-scale-key="stress"><output>0</output></div><small class="scale-description" data-scale-description="stress"></small></label>
-        <label class="tick-card marker-card"><input id="eyeTic" type="checkbox"><span>👁️ Tic en el ojo</span></label>
+    <article class="card form-card yesterday-card">
+      <div class="section-title"><div><span class="kicker">⚡ AYER</span><h3>Contexto y síntomas del día anterior</h3></div></div>
+      <div class="compact-sections">
+        <details class="compact-section" id="stressSection">
+          <summary><span>🧠 Estrés y tensión</span><small id="stressSummary">Sin señales</small></summary>
+          <div class="compact-section-body">
+            <label class="switch-row compact-switch"><input id="stressSymptoms" type="checkbox"><span>Hubo estrés o señales asociadas</span></label>
+            <div id="stressDetail" class="conditional hidden">
+              <label class="scale-card"><span>Estrés percibido <button type="button" class="info-button" data-scale-info="stress" aria-label="Ayuda sobre estrés">ⓘ</button></span><div class="scale-control"><input id="stress" type="range" min="0" max="10" value="0" data-scale-key="stress"><output>0</output></div><small class="scale-description" data-scale-description="stress"></small></label>
+              <div class="marker-row">
+                <label class="tick-card"><input id="calfTension" type="checkbox"><span>🦵 Tensión en gemelos</span></label>
+                <label class="tick-card"><input id="jawTension" type="checkbox"><span>😬 Tensión mandibular</span></label>
+                <label class="tick-card"><input id="eyeTic" type="checkbox"><span>👁️ Tic en el ojo</span></label>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="compact-section" id="contextSection">
+          <summary><span>🌍 Contexto del día</span><small id="contextSummary">Rutina habitual</small></summary>
+          <div class="compact-section-body">
+            <p class="muted">Puedes seleccionar varias opciones. <button type="button" class="info-button" data-scale-info="routineContext" aria-label="Qué significa rutina habitual">ⓘ Qué es rutina</button></p>
+            <div id="dayContexts" class="multi-select-grid">
+              <label class="tick-card"><input type="checkbox" name="dayContext" value="routine"><span>🏠 Rutina habitual</span></label>
+              <label class="tick-card"><input type="checkbox" name="dayContext" value="vacation"><span>🌴 Vacaciones</span></label>
+              <label class="tick-card"><input type="checkbox" name="dayContext" value="travel"><span>✈️ Viaje</span></label>
+              <label class="tick-card"><input type="checkbox" name="dayContext" value="hotel"><span>🏨 Hotel</span></label>
+              <label class="tick-card"><input type="checkbox" name="dayContext" value="competition"><span>🏃 Competición</span></label>
+              <label class="tick-card"><input type="checkbox" name="dayContext" value="work"><span>💼 Mucho trabajo</span></label>
+              <label class="tick-card"><input type="checkbox" name="dayContext" value="illness"><span>🤒 Enfermedad</span></label>
+              <label class="tick-card"><input type="checkbox" name="dayContext" value="family"><span>🎉 Evento familiar</span></label>
+              <label class="tick-card"><input type="checkbox" name="dayContext" value="custom"><span>✏️ Otro</span></label>
+            </div>
+            <div id="customContextWrap" class="conditional hidden"><label>Otro contexto<input id="customContext" placeholder="Describe brevemente el contexto"></label></div>
+          </div>
+        </details>
+
+        <details class="compact-section" id="respiratorySection">
+          <summary><span>🤧 Respiratorio</span><small id="respiratorySummary">Sin síntomas</small></summary>
+          <div class="compact-section-body">
+            <label class="switch-row compact-switch"><input id="respiratorySymptoms" type="checkbox"><span>Tuve síntomas respiratorios</span></label>
+            <div id="respiratoryDetail" class="conditional hidden">
+              <div class="metric-form-grid">
+                <label class="scale-card"><span>Congestión nasal <button type="button" class="info-button" data-scale-info="nasalCongestion" aria-label="Ayuda sobre congestión">ⓘ</button></span><div class="scale-control"><input id="nasalCongestion" type="range" min="0" max="5" value="0" data-scale-key="nasalCongestion"><output>0</output></div><small class="scale-description" data-scale-description="nasalCongestion"></small></label>
+                <label class="scale-card"><span>Mucosidad nasal <button type="button" class="info-button" data-scale-info="mucus" aria-label="Ayuda sobre mucosidad">ⓘ</button></span><div class="scale-control"><input id="mucus" type="range" min="0" max="5" value="0" data-scale-key="mucus"><output>0</output></div><small class="scale-description" data-scale-description="mucus"></small></label>
+              </div>
+              <div class="marker-row">
+                <label class="tick-card"><input id="throatMucus" type="checkbox"><span>🫁 Mucosidad en garganta</span></label>
+                <label class="tick-card"><input id="postNasalDrip" type="checkbox"><span>Goteo nasal</span></label>
+                <label class="tick-card"><input id="sneezing" type="checkbox"><span>Estornudos</span></label>
+                <label class="tick-card"><input id="cough" type="checkbox"><span>Tos</span></label>
+                <label class="tick-card"><input id="dailyBreathlessness" type="checkbox"><span>Falta de aire cotidiana</span></label>
+              </div>
+              <label>Observaciones respiratorias<div class="voice-field"><textarea id="respiratoryNotes" class="auto-grow" rows="3" placeholder="Duración, color o tipo de mucosidad, garganta, desencadenantes, evolución..."></textarea><div class="field-actions"><button type="button" class="voice-button" data-voice-target="respiratoryNotes">🎙️ Dictar</button><button type="button" class="expand-button" data-expand-target="respiratoryNotes">⛶ Ampliar</button></div></div></label>
+            </div>
+          </div>
+        </details>
+
+        <details class="compact-section" id="bowelSection">
+          <summary><span>🚽 Tránsito intestinal</span><small id="bowelSummary">0 deposiciones</small></summary>
+          <div class="compact-section-body">
+            <label>Número de deposiciones<select id="bowelFrequency"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4 o más</option></select></label>
+            <div id="bowelDetail" class="conditional hidden">
+              <label>Bristol predominante<select id="bristolType"><option value="">Sin registrar</option><option value="1">1 · Bolitas duras</option><option value="2">2 · Salchicha grumosa</option><option value="3">3 · Con grietas</option><option value="4">4 · Lisa y blanda</option><option value="5">5 · Trozos blandos</option><option value="6">6 · Pastosa</option><option value="7">7 · Líquida</option></select></label>
+              <div class="marker-row"><label class="tick-card"><input id="bowelUrgency" type="checkbox"><span>Urgencia</span></label><label class="tick-card"><input id="bowelPain" type="checkbox"><span>Dolor</span></label><label class="tick-card"><input id="bowelBlood" type="checkbox"><span>Sangre visible</span></label></div>
+              <label>Observaciones intestinales<textarea id="bowelNotes" class="auto-grow" rows="2" placeholder="Solo si hay algo relevante"></textarea></label>
+            </div>
+          </div>
+        </details>
+
+        <details class="compact-section" id="foodSection">
+          <summary><span>🍽️ Alimentación</span><small id="foodSummary">Habitual</small></summary>
+          <div class="compact-section-body">
+            <label class="switch-row compact-switch"><input id="usualFood" type="checkbox" checked><span>Alimentación habitual</span></label>
+            <div id="foodException" class="conditional hidden">
+              <p class="muted">Puedes seleccionar varios cambios.</p>
+              <div id="foodChanges" class="multi-select-grid">
+                <label class="tick-card"><input type="checkbox" name="foodChange" value="Restaurante"><span>Restaurante</span></label>
+                <label class="tick-card"><input type="checkbox" name="foodChange" value="Alcohol"><span>Alcohol</span></label>
+                <label class="tick-card"><input type="checkbox" name="foodChange" value="Comida rápida"><span>Comida rápida</span></label>
+                <label class="tick-card"><input type="checkbox" name="foodChange" value="Mucho azúcar"><span>Más azúcar</span></label>
+                <label class="tick-card"><input type="checkbox" name="foodChange" value="Comida copiosa"><span>Comida copiosa</span></label>
+                <label class="tick-card"><input type="checkbox" name="foodChange" value="Horarios distintos"><span>Horarios distintos</span></label>
+                <label class="tick-card"><input type="checkbox" name="foodChange" value="Alimento nuevo"><span>Alimento nuevo</span></label>
+                <label class="tick-card"><input type="checkbox" name="foodChange" value="Menor ingesta"><span>Menor ingesta</span></label>
+                <label class="tick-card"><input type="checkbox" name="foodChange" value="Otro"><span>Otro</span></label>
+              </div>
+              <label>Detalle opcional<textarea id="foodNotes" rows="2"></textarea></label>
+            </div>
+          </div>
+        </details>
       </div>
     </article>
 
@@ -111,70 +209,9 @@
       <div id="trainingList" class="training-list"><div class="empty-config">Sin entrenamiento registrado.</div></div>
     </article>
 
-    <article class="card form-card">
-      <div class="section-title"><div><span class="kicker">🌴 AYER</span><h3>Contexto del día</h3></div></div>
-      <p class="muted">Puedes seleccionar varias opciones.</p>
-      <div id="dayContexts" class="multi-select-grid">
-        <label class="tick-card"><input type="checkbox" name="dayContext" value="routine"><span>🏠 Rutina habitual</span></label>
-        <label class="tick-card"><input type="checkbox" name="dayContext" value="vacation"><span>🌴 Vacaciones</span></label>
-        <label class="tick-card"><input type="checkbox" name="dayContext" value="travel"><span>✈️ Viaje</span></label>
-        <label class="tick-card"><input type="checkbox" name="dayContext" value="hotel"><span>🏨 Hotel</span></label>
-        <label class="tick-card"><input type="checkbox" name="dayContext" value="competition"><span>🏃 Competición</span></label>
-        <label class="tick-card"><input type="checkbox" name="dayContext" value="work"><span>💼 Mucho trabajo</span></label>
-        <label class="tick-card"><input type="checkbox" name="dayContext" value="illness"><span>🤒 Enfermedad</span></label>
-        <label class="tick-card"><input type="checkbox" name="dayContext" value="family"><span>🎉 Evento familiar</span></label>
-        <label class="tick-card"><input type="checkbox" name="dayContext" value="custom"><span>✏️ Otro</span></label>
-      </div>
-      <div id="customContextWrap" class="conditional hidden"><label>Otro contexto<input id="customContext" placeholder="Describe brevemente el contexto"></label></div>
-    </article>
 
-    <article class="card form-card">
-      <div class="section-title"><div><span class="kicker">🤧 AYER</span><h3>Síntomas respiratorios</h3></div></div>
-      <label class="switch-row compact-switch"><input id="respiratorySymptoms" type="checkbox"><span>Tuve síntomas respiratorios</span></label>
-      <div id="respiratoryDetail" class="conditional hidden">
-        <div class="metric-form-grid">
-          <label class="scale-card"><span>Congestión nasal <button type="button" class="info-button" data-scale-info="nasalCongestion" aria-label="Ayuda sobre congestión">ⓘ</button></span><div class="scale-control"><input id="nasalCongestion" type="range" min="0" max="5" value="0" data-scale-key="nasalCongestion"><output>0</output></div><small class="scale-description" data-scale-description="nasalCongestion"></small></label>
-          <label class="scale-card"><span>Mucosidad <button type="button" class="info-button" data-scale-info="mucus" aria-label="Ayuda sobre mucosidad">ⓘ</button></span><div class="scale-control"><input id="mucus" type="range" min="0" max="5" value="0" data-scale-key="mucus"><output>0</output></div><small class="scale-description" data-scale-description="mucus"></small></label>
-        </div>
-        <div class="marker-row">
-          <label class="tick-card"><input id="postNasalDrip" type="checkbox"><span>Goteo nasal</span></label>
-          <label class="tick-card"><input id="sneezing" type="checkbox"><span>Estornudos</span></label>
-          <label class="tick-card"><input id="cough" type="checkbox"><span>Tos</span></label>
-          <label class="tick-card"><input id="dailyBreathlessness" type="checkbox"><span>Falta de aire cotidiana</span></label>
-        </div>
-        <label>Observaciones respiratorias<div class="voice-field"><textarea id="respiratoryNotes" class="auto-grow" rows="3" placeholder="Duración, color o tipo de mucosidad, desencadenantes, evolución..."></textarea><div class="field-actions"><button type="button" class="voice-button" data-voice-target="respiratoryNotes">🎙️ Dictar</button><button type="button" class="expand-button" data-expand-target="respiratoryNotes">⛶ Ampliar</button></div></div></label>
-      </div>
-    </article>
 
-    <article class="card form-card">
-      <div class="section-title"><div><span class="kicker">🚽 AYER</span><h3>Tránsito intestinal</h3></div></div>
-      <div class="grid two">
-        <label>Número de deposiciones<select id="bowelFrequency"><option value="">Sin registrar</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4+">4 o más</option></select></label>
-        <label>Bristol predominante<select id="bristolType"><option value="">Sin registrar</option><option value="1">1 · Bolitas duras</option><option value="2">2 · Salchicha grumosa</option><option value="3">3 · Con grietas</option><option value="4">4 · Lisa y blanda</option><option value="5">5 · Trozos blandos</option><option value="6">6 · Pastosa</option><option value="7">7 · Líquida</option></select></label>
-      </div>
-      <div class="marker-row"><label class="tick-card"><input id="bowelUrgency" type="checkbox"><span>Urgencia</span></label><label class="tick-card"><input id="bowelPain" type="checkbox"><span>Dolor</span></label><label class="tick-card"><input id="bowelBlood" type="checkbox"><span>Sangre visible</span></label></div>
-      <label>Observaciones intestinales<textarea id="bowelNotes" class="auto-grow" rows="2" placeholder="Solo si hay algo relevante"></textarea></label>
-    </article>
 
-    <article class="card form-card">
-      <div class="section-title"><div><span class="kicker">🍽️ AYER</span><h3>Alimentación</h3></div></div>
-      <label class="switch-row compact-switch"><input id="usualFood" type="checkbox" checked><span>Alimentación habitual</span></label>
-      <div id="foodException" class="conditional hidden">
-        <p class="muted">Puedes seleccionar varios cambios.</p>
-        <div id="foodChanges" class="multi-select-grid">
-          <label class="tick-card"><input type="checkbox" name="foodChange" value="Restaurante"><span>Restaurante</span></label>
-          <label class="tick-card"><input type="checkbox" name="foodChange" value="Alcohol"><span>Alcohol</span></label>
-          <label class="tick-card"><input type="checkbox" name="foodChange" value="Comida rápida"><span>Comida rápida</span></label>
-          <label class="tick-card"><input type="checkbox" name="foodChange" value="Mucho azúcar"><span>Más azúcar</span></label>
-          <label class="tick-card"><input type="checkbox" name="foodChange" value="Comida copiosa"><span>Comida copiosa</span></label>
-          <label class="tick-card"><input type="checkbox" name="foodChange" value="Horarios distintos"><span>Horarios distintos</span></label>
-          <label class="tick-card"><input type="checkbox" name="foodChange" value="Alimento nuevo"><span>Alimento nuevo</span></label>
-          <label class="tick-card"><input type="checkbox" name="foodChange" value="Menor ingesta"><span>Menor ingesta</span></label>
-          <label class="tick-card"><input type="checkbox" name="foodChange" value="Otro"><span>Otro</span></label>
-        </div>
-        <label>Detalle opcional<textarea id="foodNotes" rows="2"></textarea></label>
-      </div>
-    </article>
 
     <article class="card form-card">
       <div class="section-title"><div><span class="kicker">💊 RUTINA</span><h3>Suplementación diaria</h3></div></div>
@@ -217,5 +254,5 @@
 <div id="textEditorBackdrop" class="text-editor-backdrop" aria-hidden="true"><div class="text-editor-panel"><div class="text-editor-head"><h3 id="textEditorTitle">Editar observaciones</h3><button id="textEditorClose" type="button" class="secondary-button">Cerrar</button></div><textarea id="textEditorArea" rows="12"></textarea><div class="text-editor-actions"><button id="textEditorCancel" type="button" class="secondary-button">Cancelar</button><button id="textEditorApply" type="button" class="primary">Aplicar</button></div></div></div>
 <div id="scaleInfoBackdrop" class="scale-info-backdrop" aria-hidden="true"><div class="scale-info-panel"><div class="text-editor-head"><h3 id="scaleInfoTitle">Guía de escala</h3><button id="scaleInfoClose" type="button" class="secondary-button">Cerrar</button></div><div id="scaleInfoBody" class="scale-info-body"></div></div></div>
 <div id="modalBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle"></h3><div id="modalBody" class="modal-grid"></div><div class="modal-actions"><button id="modalCancel" class="secondary-button">Cancelar</button><button id="modalSave" class="small-button">Guardar</button></div></div></div>
-<script src="app.js?v=1.1.5"></script>
+<script src="app.js?v=1.2.0"></script>
 </body></html>

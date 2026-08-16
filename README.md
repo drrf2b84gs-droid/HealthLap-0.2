@@ -1,9 +1,5 @@
-# HealthLab Beta 1.1.5
+# HealthLab Beta 1.2.0
 
-Versión construida sobre la Beta 1.1.4 estable.
+Versión construida sobre la Beta 1.1.5 estable.
 
-Cambios principales:
-- marcador diario de inflamación abdominal 0–4 con guía de interpretación;
-- peso opcional en kg, pensado para registro semanal;
-- ambos campos integrados en edición, calendario, estadísticas y exportaciones JSON/CSV;
-- migración automática al schemaVersion 14.
+Cambios principales: registro compacto para iPhone, manos bajo desplegable, antropometría semanal (peso, cintura y cadera), agrupación de estrés/tensiones, bloque Ayer plegable, mucosidad en garganta, tránsito intestinal compacto y esquema JSON 15. Entrenamiento se mantiene sin cambios.
