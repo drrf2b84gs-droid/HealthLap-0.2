@@ -1,4 +1,4 @@
-# HealthLab Beta 1.2.0
+# HealthLab Beta 1.2.1
 
 Versión construida sobre la Beta 1.1.5 estable.
 
