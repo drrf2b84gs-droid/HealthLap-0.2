@@ -158,3 +158,18 @@ input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);borde
 .smart-duration,.smart-pace{font-variant-numeric:tabular-nums}
 input:focus,textarea:focus,select:focus{scroll-margin-top:calc(env(safe-area-inset-top) + 72px);scroll-margin-bottom:calc(env(safe-area-inset-bottom) + 180px)}
 @supports(padding:max(0px)){body::before{content:"";position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:9;pointer-events:none}}
+.quick-actions{margin-top:16px}
+.quick-actions button{flex:1}
+.wake-notes,.hrv-grid{margin-top:12px}
+#trainingForm .training-list,#trainingForm>.button-row{margin-top:12px}
+#trainingForm button[type=submit],#episodeForm button[type=submit]{background:var(--teal);color:white}
+.respiratory-group{min-width:0;margin:12px 0;padding:10px;border:1px solid var(--line);border-radius:12px}
+.respiratory-group legend{padding:0 5px;font-weight:700}
+#episodeForm .compact-section{margin:12px 0}
+#episodeList,.activity-training+.activity-training{margin-top:12px}
+.episode-card h4,.episode-card p{margin:0 0 8px}
+.episode-notes{white-space:pre-wrap}
+.activity-training .button-row,.episode-card .button-row{margin-top:8px}
+@media(max-width:620px){
+ input:not([type=checkbox]):not([type=range]),select,textarea{font-size:16px}
+}

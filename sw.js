@@ -1,1 +1,43 @@
-const CACHE='healthlab-beta-1-2-1';const FILES=['./','./index.html?v=1.2.1','./styles.css?v=1.2.1','./app.js?v=1.2.1','./manifest.json','./icon-1024.png','./icon-512.png','./icon-192.png','./apple-touch-icon.png','./apple-touch-icon-120.png','./favicon-32.png'];self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))).then(()=>self.clients.claim()));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request)))})
+const CACHE='healthlab-beta-1-3-0';
+const FILES=[
+ './','./index.html?v=1.2.1','./styles.css?v=1.3.0','./app.js?v=1.3.0',
+ './manifest.json','./icon-1024.png','./icon-512.png','./icon-192.png',
+ './apple-touch-icon.png','./apple-touch-icon-120.png','./favicon-32.png'
+];
+
+self.addEventListener('install',event=>{
+ event.waitUntil((async()=>{
+  const cache=await caches.open(CACHE);
+  await cache.addAll(FILES);
+  await self.skipWaiting();
+ })());
+});
+
+self.addEventListener('activate',event=>{
+ event.waitUntil((async()=>{
+  const keys=await caches.keys();
+  await Promise.all(keys.filter(key=>key.startsWith('healthlab-beta-')&&key!==CACHE).map(key=>caches.delete(key)));
+  await self.clients.claim();
+ })());
+});
+
+self.addEventListener('fetch',event=>{
+ const request=event.request;
+ if(request.method!=='GET'||!request.url.startsWith(self.registration.scope))return;
+ event.respondWith((async()=>{
+  const cache=await caches.open(CACHE);
+  try{
+   const response=await fetch(request);
+   if(response.ok)await cache.put(request,response.clone()).catch(()=>{});
+   return response;
+  }catch{
+   const cached=await cache.match(request);
+   if(cached)return cached;
+   if(request.mode==='navigate'){
+    const page=await cache.match('./index.html?v=1.2.1');
+    if(page)return page;
+   }
+   return Response.error();
+  }
+ })());
+});
