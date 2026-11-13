@@ -1,6 +1,6 @@
-const CACHE='healthlab-beta-1-3-0';
+const CACHE='healthlab-beta-1-3-1';
 const FILES=[
- './','./index.html?v=1.2.1','./styles.css?v=1.3.0','./app.js?v=1.3.0',
+ './','./index.html?v=1.2.1','./styles.css?v=1.3.1','./app.js?v=1.3.1',
  './manifest.json','./icon-1024.png','./icon-512.png','./icon-192.png',
  './apple-touch-icon.png','./apple-touch-icon-120.png','./favicon-32.png'
 ];

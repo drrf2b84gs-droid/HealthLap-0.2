@@ -1,8 +1,10 @@
-const APP_VERSION='1.3.0';
+const APP_VERSION='1.3.1';
 const CURRENT_SCHEMA_VERSION=16;
 const EXPORT_FORMAT_VERSION=4;
 const EXPORT_FORMAT='healthlab-json';
 const STORAGE_KEY='healthLabData';
+const DATABASE_NAME='HealthLab';
+const DATA_STORE='history';
 const THEME_KEY='healthLabTheme';
 const $=id=>document.getElementById(id);
 const clone=v=>JSON.parse(JSON.stringify(v));
@@ -187,47 +189,124 @@ function migrateTraining(t){
   t.avgPace=`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;
  }
 }
-let storedSnapshot=null;
+let legacySnapshot;
+let storedRevision=null;
 let storageLoadFailed=false;
-function loadData(){
- try{
-  storedSnapshot=localStorage.getItem(STORAGE_KEY);
-  if(storedSnapshot===null)return clone(defaults);
-  const saved=JSON.parse(storedSnapshot);
-  if(!Array.isArray(saved?.entries))throw new Error('Historial local no válido.');
-  return migrate(saved);
- }catch{
-  storageLoadFailed=true;
-  return clone(defaults);
- }
+let database;
+let storageReady=false;
+let saving=false;
+let data=clone(defaults);
+
+function openDatabase(){
+ return new Promise((resolve,reject)=>{
+  const request=indexedDB.open(DATABASE_NAME,1);
+  let blocked=false;
+  request.onupgradeneeded=()=>request.result.createObjectStore(DATA_STORE);
+  request.onblocked=()=>{
+   blocked=true;
+   reject(new Error('Base de datos ocupada.'));
+  };
+  request.onerror=()=>reject(request.error);
+  request.onsuccess=()=>{
+   const db=request.result;
+   if(blocked){db.close();return}
+   db.onversionchange=()=>db.close();
+   resolve(db);
+  };
+ });
 }
-let data=loadData();
-function saveData(nextData,{replaceUnreadable=false}={}){
+function readDatabase(){
+ return new Promise((resolve,reject)=>{
+  const transaction=database.transaction(DATA_STORE,'readonly');
+  const request=transaction.objectStore(DATA_STORE).get(STORAGE_KEY);
+  transaction.oncomplete=()=>resolve(request.result);
+  transaction.onabort=()=>reject(transaction.error);
+ });
+}
+function decodeHistory(snapshot){
+ const saved=JSON.parse(snapshot);
+ if(!Array.isArray(saved?.entries))throw new Error('Historial local no válido.');
+ return migrate(saved);
+}
+function loadLegacyHistory(){
  try{
-  if(storageLoadFailed&&!replaceUnreadable){
-   alert('No se ha podido leer el historial local. Se ha conservado la copia que había guardada.');
-   return false;
-  }
-  if(localStorage.getItem(STORAGE_KEY)!==storedSnapshot){
-   alert('El historial ha cambiado desde que abriste esta pantalla. Conserva lo que has escrito antes de volver a abrir HealthLab.');
-   return false;
-  }
+  legacySnapshot=localStorage.getItem(STORAGE_KEY);
+  if(legacySnapshot!==null)data=decodeHistory(legacySnapshot);
+ }catch{storageLoadFailed=true}
+}
+async function loadData(){
+ let record;
+ try{
+  database=await openDatabase();
+  record=await readDatabase();
+  storageReady=true;
+ }catch{
+  return;
+ }
+ if(record===undefined){loadLegacyHistory();return}
+ storedRevision=record.revision;
+ try{data=decodeHistory(record.snapshot)}catch{storageLoadFailed=true}
+}
+function writeDatabase(snapshot,revision){
+ return new Promise((resolve,reject)=>{
+  const transaction=database.transaction(DATA_STORE,'readwrite');
+  const store=transaction.objectStore(DATA_STORE);
+  const current=store.get(STORAGE_KEY);
+  let failure;
+  transaction.oncomplete=resolve;
+  transaction.onabort=()=>reject(failure||transaction.error);
+  current.onsuccess=()=>{
+   try{
+    const currentRevision=current.result?.revision??null;
+    const legacyChanged=currentRevision===null&&legacySnapshot!==undefined&&
+     localStorage.getItem(STORAGE_KEY)!==legacySnapshot;
+    if(currentRevision!==storedRevision||legacyChanged){
+     failure=new Error('El historial ha cambiado desde que abriste esta pantalla. Conserva lo que has escrito antes de volver a abrir HealthLab.');
+     failure.name='HistoryChanged';
+     transaction.abort();
+     return;
+    }
+    store.put({snapshot,revision},STORAGE_KEY);
+   }catch(error){
+    failure=error;
+    transaction.abort();
+   }
+  };
+ });
+}
+async function saveData(nextData,{replaceUnreadable=false}={}){
+ if(saving)return false;
+ if(!storageReady){
+  alert('No se ha podido abrir el almacenamiento de HealthLab. Conserva lo que has escrito y vuelve a abrir la app desde el icono habitual.');
+  return false;
+ }
+ if(storageLoadFailed&&!replaceUnreadable){
+  alert('No se ha podido leer el historial local. Se ha conservado la copia que había guardada.');
+  return false;
+ }
+ saving=true;
+ setStorageControlsInert(true);
+ try{
   const snapshot=JSON.stringify(nextData);
-  localStorage.setItem(STORAGE_KEY,snapshot);
-  if(localStorage.getItem(STORAGE_KEY)!==snapshot){
-   alert('No se ha podido verificar el guardado. Conserva lo que has escrito antes de cerrar HealthLab.');
-   return false;
-  }
-  storedSnapshot=snapshot;
+  const revision=makeUuid();
+  await writeDatabase(snapshot,revision);
+  storedRevision=revision;
   storageLoadFailed=false;
   data=nextData;
   return true;
  }catch(error){
-  alert(error?.name==='QuotaExceededError'
-   ?'No hay espacio suficiente para guardar en HealthLab. Conserva lo que has escrito y exporta una copia del historial.'
-   :'No se ha podido acceder al almacenamiento de HealthLab. Conserva lo que has escrito antes de cerrar la app.');
+  if(error?.name==='HistoryChanged')alert(error.message);
+  else if(error?.name==='QuotaExceededError'){
+   alert('El navegador no ha podido ampliar el almacenamiento de HealthLab. Conserva lo que has escrito y exporta una copia del historial.');
+  }else alert('No se ha podido completar el guardado. Conserva lo que has escrito antes de cerrar la app.');
   return false;
+ }finally{
+  saving=false;
+  setStorageControlsInert(false);
  }
+}
+function setStorageControlsInert(inert){
+ document.querySelectorAll('main,.bottom-nav,#modalBackdrop').forEach(element=>element.inert=inert);
 }
 function localTime(date=new Date()){return [date.getHours(),date.getMinutes()].map(value=>String(value).padStart(2,'0')).join(':')}
 function localISO(date=new Date()){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
@@ -439,7 +518,7 @@ function closeTrainingForm(date){
  else go('home');
 }
 $('cancelTraining').onclick=()=>closeTrainingForm(trainingReturnDate);
-$('trainingForm').onsubmit=event=>{
+$('trainingForm').onsubmit=async event=>{
  event.preventDefault();
  stopActiveDictation();
  let training;
@@ -456,7 +535,7 @@ $('trainingForm').onsubmit=event=>{
  const trainings=editingTrainingId
   ?data.trainings.map(item=>item.uuid===editingTrainingId?record:item)
   :[...data.trainings,record];
- if(!saveData({...data,trainings}))return;
+ if(!await saveData({...data,trainings}))return;
  closeTrainingForm(date);
 };
 
@@ -549,7 +628,7 @@ function renderEpisodeList(){
  $('episodeList').innerHTML=episodes.map(episodeSummary).join('');
 }
 $('cancelEpisode').onclick=resetEpisodeForm;
-$('episodeForm').onsubmit=event=>{
+$('episodeForm').onsubmit=async event=>{
  event.preventDefault();
  const fields=Object.fromEntries(Object.entries(episodeInputs).map(([key,id])=>[key,getVal(id).trim()]));
  if(!fields.date||(!fields.type&&!fields.symptom))return alert('Indica la fecha y el tipo o una descripción del episodio.');
@@ -565,7 +644,7 @@ $('episodeForm').onsubmit=event=>{
   createdAt:previous?.createdAt||now,updatedAt:now,intensity:nullableNumber(fields.intensity)
  };
  const events=previous?data.events.map(item=>item.uuid===episode.uuid?episode:item):[...data.events,episode];
- if(!saveData({...data,events}))return;
+ if(!await saveData({...data,events}))return;
  resetEpisodeForm();
  showCalendarDate(episode.date);
 };
@@ -721,7 +800,7 @@ function buildSummary(payload){
 }
 function canonicalize(v){if(Array.isArray(v))return v.map(canonicalize);if(v&&typeof v==='object'){const o={};for(const k of Object.keys(v).sort())o[k]=canonicalize(v[k]);return o}return v}
 async function sha256(text){const bytes=new TextEncoder().encode(text),hash=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('')}
-$('quickForm').onsubmit=event=>{
+$('quickForm').onsubmit=async event=>{
  event.preventDefault();
  stopActiveDictation();
  const date=$('entryDate').value||localISO();
@@ -764,7 +843,7 @@ $('quickForm').onsubmit=event=>{
   entries.push(entry);
  }
  entries.sort((a,b)=>a.date.localeCompare(b.date));
- if(!saveData({...data,entries})){
+ if(!await saveData({...data,entries})){
   recordSaveFailed=true;
   return;
  }
@@ -777,7 +856,7 @@ function updateHome(){
  const cards=document.querySelectorAll('.metric-card strong');
  cards[0].textContent=today?.handSwelling??0;
  cards[1].textContent=today?.fatigue??0;
- document.querySelector('.hero-card .pill').textContent=storageLoadFailed?'Historial no disponible':(today?'Registro completado':'Registro pendiente');
+ document.querySelector('.hero-card .pill').textContent=!storageReady||storageLoadFailed?'Historial no disponible':(today?'Registro completado':'Registro pendiente');
  $('homeRecord').textContent=today?'Ver registro de hoy':'Registrar ahora';
 }
 $('homeRecord').onclick=()=>{
@@ -852,7 +931,7 @@ function activityForDate(date){
   episodes.length?`<h3>Episodios del día</h3>${episodes.map(episodeSummary).join('')}`:''
  ].join('');
 }
-function handleActivityAction(event){
+async function handleActivityAction(event){
  const button=event.target.closest('button');
  if(!button)return;
  const {editTraining,deleteTraining,editEpisode,deleteEpisode}=button.dataset;
@@ -866,11 +945,11 @@ function handleActivityAction(event){
  }
  if(deleteTraining&&confirm('¿Eliminar este entrenamiento?')){
   const trainings=data.trainings.filter(item=>item.uuid!==deleteTraining);
-  if(saveData({...data,trainings}))renderCalendar();
+  if(await saveData({...data,trainings}))renderCalendar();
  }
  if(deleteEpisode&&confirm('¿Eliminar este episodio?')){
   const events=data.events.filter(item=>item.uuid!==deleteEpisode);
-  if(saveData({...data,events})){
+  if(await saveData({...data,events})){
    if(editingEpisodeId===deleteEpisode)resetEpisodeForm();
    renderCalendar();
    renderEpisodeList();
@@ -902,10 +981,10 @@ function respiratorySummary(entry){
 }
 function handSideSummary(label,h){if(!h)return '';const bits=[];if(h.fingers?.length)bits.push(h.fingers.join(', '));if(h.joint)bits.push(h.joint);if(h.mobilityLimited)bits.push('movilidad limitada');return bits.length?`<p><b>${label}:</b> ${esc(bits.join(' · '))}</p>`:''}
 function showDay(date){const e=data.entries.find(x=>x.date===date),activity=activityForDate(date);if(!e){$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>${fmtDate(date)}</strong><p class="muted">Sin registro diario.</p></div>${activity}`;return}const prev=previousISO(date),supp=[...(e.dailySupplements||[]),...(e.sportSupplements||[])],hd=e.handDetails||{},ctxMap={routine:'🏠 Rutina habitual',vacation:'🌴 Vacaciones',travel:'✈️ Viaje',hotel:'🏨 Hotel',competition:'🏃 Competición',work:'💼 Mucho trabajo',illness:'🤒 Enfermedad',family:'🎉 Evento familiar',custom:e.customContext||'Otro'},ctx=(e.dayContexts||[e.dayContext||'routine']).map(x=>ctxMap[x]||x).join(' · ');const bowel=e.bowelFrequency!==''||e.bristolType?`<p><b>🚽 Tránsito:</b> ${e.bowelFrequency!==''?`${esc(e.bowelFrequency)} deposiciones`:''}${e.bowelFrequency!==''&&e.bristolType?' · ':''}${e.bristolType?`Bristol ${esc(e.bristolType)}`:''}${e.bowelUrgency?' · urgencia':''}${e.bowelPain?' · dolor':''}${e.bowelBlood?' · sangre visible':''}</p>${e.bowelNotes?`<p>${esc(e.bowelNotes)}</p>`:''}`:'';$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>Registro realizado para ${fmtDate(date)}</strong><p class="muted temporal-note">Este registro combina el cierre del ${fmtDate(prev)} con el sueño ${prev} → ${date} y tu estado al despertar del ${fmtDate(date)}.</p><div class="detail-section"><h4>🌙 Noche ${prev} → ${date}</h4><p><b>Sueño:</b> ${e.sleepQuality??0}/100 · ${esc(e.sleepDuration||minutesText(e.sleepMinutes||0))}${e.usualSchedule===false?' · horario no habitual':''}</p>${e.sleepNotes?`<p>${esc(e.sleepNotes)}</p>`:''}</div><div class="detail-section"><h4>🌅 Al despertar · ${date}</h4><p><b>Estado:</b> cansancio ${e.fatigue}/10${e.legFatigue?' · piernas cargadas (dato histórico)':''}</p><p><b>Manos:</b> inflamación ${e.handSwelling}/10 · dolor ${e.handPain}/10 · descamación ${e.peeling}/3</p><p><b>🫃 Inflamación abdominal:</b> ${e.abdominalInflammation??0}/4${e.weightKg!=null?` · <b>⚖️ Peso:</b> ${e.weightKg} kg`:''}${e.waistCm!=null?` · <b>Cintura:</b> ${e.waistCm} cm`:''}${e.hipCm!=null?` · <b>Cadera:</b> ${e.hipCm} cm`:''}</p>${handSideSummary('Derecha',hd.right)}${handSideSummary('Izquierda',hd.left)}${hd.notes?`<p>${esc(hd.notes)}</p>`:''}${(hd.photos||[]).map((x,i)=>`<img class="history-hand-photo" src="${x}" alt="Foto de manos ${i+1}">`).join('')}${e.paddedHands?'<p>Sensación de manos acolchadas</p>':''}${e.wakeNotes?`<p><b>Observaciones al despertar:</b> ${esc(e.wakeNotes)}</p>`:''}</div><div class="detail-section"><h4>📆 Día cerrado · ${prev}</h4><p><b>Contexto:</b> ${esc(ctx)}</p><p><b>Estrés:</b> ${e.stress||0}/10${e.jawTension?' · tensión mandibular':''}${e.calfTension?' · tensión gemelos':''}${e.eyeTic?' · tic ocular':''}</p>${recoverySummary(e)}${respiratorySummary(e)}${bowel}${(e.trainings||[]).map(trainingSummary).join('')}${supp.length?`<p><b>💊 Suplementos:</b> ${supp.map(s=>`${esc(s.name)} ${s.amount} ${esc(s.unit)}`).join(' · ')}</p>`:''}${(e.medicationsTaken||[]).length?`<p><b>💉 Medicación:</b> ${e.medicationsTaken.map(s=>`${esc(s.name)} ${s.amount} ${esc(s.unit)}`).join(' · ')}</p>`:''}${e.usualFood===false?`<p><b>🍽️ Alimentación:</b> ${esc((e.foodChanges||[e.foodChange].filter(Boolean)).join(' · '))}${e.foodNotes?` · ${esc(e.foodNotes)}`:''}</p>`:''}${e.notes?`<p><b>Observaciones:</b> ${esc(e.notes)}</p>`:''}</div></div><div class="button-row"><button class="secondary-button" onclick="editEntry('${date}')">Editar</button><button class="danger" onclick="deleteEntry('${date}')">Eliminar</button></div></div>${activity}`}
-window.deleteEntry=date=>{
+window.deleteEntry=async date=>{
  if(!confirm('¿Eliminar este registro?'))return;
  const entries=data.entries.filter(entry=>entry.date!==date);
- if(saveData({...data,entries})){renderCalendar();updateHome()}
+ if(await saveData({...data,entries})){renderCalendar();updateHome()}
 };
 function restoreItemGroup(group,taken){document.querySelectorAll(`[data-group="${group}"][data-item-check]`).forEach(cb=>cb.checked=false);for(const x of taken||[]){const cb=document.querySelector(`[data-item-check="${x.id}"][data-group="${group}"]`),dose=document.querySelector(`[data-item-dose="${x.id}"][data-group="${group}"]`);if(cb)cb.checked=true;if(dose)dose.value=x.amount}}
 window.editEntry=date=>{const e=data.entries.find(x=>x.date===date);if(!e)return;editingDate=date;go('record');$('entryDate').value=e.date;updateTemporalLabels();for(const id of ['fatigue','handSwelling','handPain','abdominalInflammation','stress','peeling']){$(id).value=e[id]||0;$(id).dispatchEvent(new Event('input'))}if($('legFatigue'))$('legFatigue').checked=!!e.legFatigue;$('paddedHands').checked=!!e.paddedHands;$('wakeNotes').value=e.wakeNotes||'';const handsOn=hasHandSymptoms(e);$('handSymptoms').checked=handsOn;toggleHandSymptoms(handsOn);const stressOn=Number(e.stress||0)>0||!!e.eyeTic||!!e.calfTension||!!e.jawTension;$('stressSymptoms').checked=stressOn;toggleStressDetail();$('eyeTic').checked=!!e.eyeTic;$('calfTension').checked=!!e.calfTension;$('jawTension').checked=!!e.jawTension;$('weightKg').value=e.weightKg??'';$('waistCm').value=e.waistCm??'';$('hipCm').value=e.hipCm??'';updateAnthropometryHints();$('sleepQuality').value=e.sleepQuality||0;$('sleepDuration').value=e.sleepDuration||minutesText(e.sleepMinutes||0);$('usualSchedule').checked=e.usualSchedule!==false;$('sleepNotes').value=e.sleepNotes||'';$('sleepException').classList.toggle('hidden',$('usualSchedule').checked);$('usualFood').checked=e.usualFood!==false;document.querySelectorAll('[name=foodChange]').forEach(x=>x.checked=(e.foodChanges||[e.foodChange].filter(Boolean)).includes(x.value));$('foodNotes').value=e.foodNotes||'';$('foodException').classList.toggle('hidden',$('usualFood').checked);const contexts=e.dayContexts||[e.dayContext||'routine'];document.querySelectorAll('[name=dayContext]').forEach(x=>x.checked=contexts.includes(x.value));$('customContext').value=e.customContext||'';$('customContextWrap').classList.toggle('hidden',!contexts.includes('custom'));restoreRespiratory(e);const hd=e.handDetails||{};for(const side of ['right','left']){const h=hd[side]||{};$(side+'Joint').value=h.joint||'';$(side+'MobilityLimited').checked=!!h.mobilityLimited;document.querySelectorAll(`[name=${side}Finger]`).forEach(x=>x.checked=(h.fingers||[]).includes(x.value))}$('handNotes').value=hd.notes||'';handPhotoData=clone(hd.photos||[]);renderHandPhoto();toggleHandDetail(!!((hd.right?.fingers||[]).length||(hd.left?.fingers||[]).length||hd.right?.joint||hd.left?.joint||hd.notes||(hd.photos||[]).length||e.handSwelling>=2||e.handPain>=2));$('appleRestingHeartRate').value=e.appleRestingHeartRate??'';$('appleHrvAverage').value=e.appleHrvAverage??'';$('appleHrvMin').value=e.appleHrvMinMs??'';$('appleHrvMax').value=e.appleHrvMaxMs??'';$('bowelFrequency').value=e.bowelFrequency??0;$('bristolType').value=e.bristolType??'';$('bowelUrgency').checked=!!e.bowelUrgency;$('bowelPain').checked=!!e.bowelPain;$('bowelBlood').checked=!!e.bowelBlood;$('bowelNotes').value=e.bowelNotes||'';toggleBowelDetail();updateCompactSummaries();$('notes').value=e.notes||'';trainingDrafts=clone(e.trainings||[]).map(makeTrainingDraft);renderTrainingList();renderRecordItems();restoreItemGroup('dailySupplements',e.dailySupplements||[]);restoreItemGroup('sportSupplements',e.sportSupplements||[]);restoreItemGroup('medications',e.medicationsTaken||[]);bindExpandableTextareas();bindRanges();bindScaleInfo()};
@@ -914,23 +993,23 @@ function drawChart(arr){const c=$('statsChart'),ctx=c.getContext('2d'),dpr=devic
 const configMeta={dailySupplements:{title:'Suplemento diario'},sportSupplements:{title:'Suplemento deportivo'},medications:{title:'Medicación'},trainingTypes:{title:'Tipo de entrenamiento'}};
 function renderSettings(){for(const key of ['dailySupplements','sportSupplements','medications','trainingTypes']){const list=$(key+'List'),arr=data[key]||[];list.innerHTML=arr.filter(item=>key!=='sportSupplements'||!hiddenSportItems.has(item.id)).sort((a,b)=>(a.order||0)-(b.order||0)).map(x=>`<div class="config-item"><span class="config-grip">⋮⋮</span><div class="config-main"><strong>${esc(x.name)}</strong><small>${key==='trainingTypes'?esc(x.kind||'otro'):`${x.dose??0} ${esc(x.unit||'')} ${x.defaultTaken?'· marcado por defecto':''} ${x.composition?`· ${esc(x.composition)}`:''}`}</small></div><button class="config-toggle ${x.enabled!==false?'on':''}" data-toggle="${key}" data-id="${x.id}"></button><button class="icon-mini" data-edit="${key}" data-id="${x.id}">✎</button><button class="icon-mini danger-text" data-del="${key}" data-id="${x.id}">×</button></div>`).join('')||'<div class="empty-config">Sin elementos.</div>'}bindConfigButtons()}
 function bindConfigButtons(){
- document.querySelectorAll('[data-toggle]').forEach(button=>button.onclick=()=>{
+ document.querySelectorAll('[data-toggle]').forEach(button=>button.onclick=async ()=>{
   const {toggle:key,id}=button.dataset;
   const items=data[key].map(item=>item.id===id?{...item,enabled:!item.enabled}:item);
-  if(saveData({...data,[key]:items}))renderSettings();
+  if(await saveData({...data,[key]:items}))renderSettings();
  });
  document.querySelectorAll('[data-edit]').forEach(button=>button.onclick=()=>openConfigModal(button.dataset.edit,button.dataset.id));
- document.querySelectorAll('[data-del]').forEach(button=>button.onclick=()=>{
+ document.querySelectorAll('[data-del]').forEach(button=>button.onclick=async ()=>{
   if(!confirm('¿Eliminar este elemento?'))return;
   const {del:key,id}=button.dataset;
   const items=data[key].filter(item=>item.id!==id);
-  if(saveData({...data,[key]:items}))renderSettings();
+  if(await saveData({...data,[key]:items}))renderSettings();
  });
 }
 document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openConfigModal(b.dataset.add));let modalState=null;
 function openConfigModal(key,id=''){const item=id?data[key].find(x=>x.id===id):null;modalState={key,id};$('modalTitle').textContent=(item?'Editar ':'Añadir ')+(configMeta[key]?.title||'elemento');const isTrain=key==='trainingTypes';$('modalBody').innerHTML=`<label>Nombre<input id="cfgName" value="${esc(item?.name||'')}"></label>${isTrain?`<label>Tipo de formulario<select id="cfgKind"><option value="run">Carrera</option><option value="bike">Bici</option><option value="strength">Fuerza</option><option value="functional">Fuerza funcional / gomas</option><option value="mobility">Movilidad</option><option value="trekking">Trekking</option><option value="other">Otros</option></select></label>`:`<div class="grid two"><label>Dosis habitual<input id="cfgDose" type="number" step="0.1" value="${item?.dose??0}"></label><label>Unidad<input id="cfgUnit" value="${esc(item?.unit||'')}"></label></div><label class="tick-card"><input id="cfgDefault" type="checkbox" ${item?.defaultTaken?'checked':''}><span>Marcado por defecto en Registro</span></label><label>Composición / detalle<textarea id="cfgComposition" rows="3">${esc(item?.composition||'')}</textarea></label>`}`;$('modalBackdrop').classList.add('open');if(isTrain&&item)$('cfgKind').value=item.kind||'other'}
 $('modalCancel').onclick=()=>$('modalBackdrop').classList.remove('open');
-$('modalSave').onclick=()=>{
+$('modalSave').onclick=async ()=>{
  const {key,id}=modalState;
  const name=$('cfgName').value.trim();
  if(!name)return alert('Escribe un nombre.');
@@ -948,11 +1027,12 @@ $('modalSave').onclick=()=>{
  }
  if(index>=0)items[index]=item;
  else items.push(item);
- if(!saveData({...data,[key]:items}))return;
+ if(!await saveData({...data,[key]:items}))return;
  $('modalBackdrop').classList.remove('open');
  renderSettings();
 };
 async function buildJsonExport({includePhotos=true,exportType='full'}={}){
+ if(!storageReady||storageLoadFailed)throw new Error('El historial no está disponible para exportar. Vuelve a abrir HealthLab desde el icono habitual.');
  const payload=normalizedPayload(data);
  if(!includePhotos)for(const entry of payload.entries)entry.handDetails.photos=[];
  const report=validateData(payload);if(report.errors.length)throw new Error('No se puede exportar hasta corregir:\n'+report.errors.join('\n'));
@@ -962,6 +1042,7 @@ async function buildJsonExport({includePhotos=true,exportType='full'}={}){
 $('exportAll').onclick=async()=>{try{download(JSON.stringify(await buildJsonExport({includePhotos:true,exportType:'full'}),null,2),`healthlab_backup_${localISO()}.json`,'application/json')}catch(err){alert(err.message)}};
 $('exportAnalysis').onclick=async()=>{try{download(JSON.stringify(await buildJsonExport({includePhotos:false,exportType:'analysis'}),null,2),`healthlab_analysis_${localISO()}.json`,'application/json')}catch(err){alert(err.message)}};
 $('exportCsv').onclick=()=>{
+ if(!storageReady||storageLoadFailed)return alert('El historial no está disponible para exportar.');
  const payload=normalizedPayload(data);
  const entryFields=[
   'sleepQuality','sleepDurationMinutes','fatigue','legFatigue','handSwelling','handPain','paddedHands','peeling',
@@ -982,13 +1063,22 @@ $('exportCsv').onclick=()=>{
  download(csv,`healthlab_${localISO()}.csv`,'text/csv;charset=utf-8');
 };
 function download(content,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
-$('importAll').onchange=async e=>{try{const obj=JSON.parse(await e.target.files[0].text());const payload=obj?.data&&Array.isArray(obj.data.entries)?obj.data:obj;if(!payload||!Array.isArray(payload.entries))throw new Error('No contiene entries.');if(obj.integrity?.checksum&&crypto.subtle){const actual=await sha256(JSON.stringify(canonicalize(payload)));if(actual!==obj.integrity.checksum&&!confirm('El checksum no coincide. El archivo pudo modificarse o corromperse. ¿Continuar de todos modos?'))return}const migrated=migrate(payload),report=validateData(migrated);if(report.errors.length)throw new Error(report.errors.join('\n'));const warningText=report.warnings.length?'\n\nAdvertencias:\n'+report.warnings.slice(0,10).join('\n'):'';if(confirm(`Se importarán ${migrated.entries.length} registros y se migrarán al esquema ${CURRENT_SCHEMA_VERSION}.${warningText}\n\nEsto sustituirá todos los datos actuales. ¿Continuar?`)&&saveData(migrated,{replaceUnreadable:true})){alert('Datos importados y validados.');renderSettings();updateHome()}}catch(err){alert('Archivo JSON no válido: '+(err?.message||'error desconocido'))}finally{e.target.value=''}};
-$('resetDemo').onclick=()=>{if(confirm('¿Restablecer toda la aplicación?')&&saveData(clone(defaults),{replaceUnreadable:true}))location.reload()};
+$('importAll').onchange=async e=>{try{const obj=JSON.parse(await e.target.files[0].text());const payload=obj?.data&&Array.isArray(obj.data.entries)?obj.data:obj;if(!payload||!Array.isArray(payload.entries))throw new Error('No contiene entries.');if(obj.integrity?.checksum&&crypto.subtle){const actual=await sha256(JSON.stringify(canonicalize(payload)));if(actual!==obj.integrity.checksum&&!confirm('El checksum no coincide. El archivo pudo modificarse o corromperse. ¿Continuar de todos modos?'))return}const migrated=migrate(payload),report=validateData(migrated);if(report.errors.length)throw new Error(report.errors.join('\n'));const warningText=report.warnings.length?'\n\nAdvertencias:\n'+report.warnings.slice(0,10).join('\n'):'';if(confirm(`Se importarán ${migrated.entries.length} registros y se migrarán al esquema ${CURRENT_SCHEMA_VERSION}.${warningText}\n\nEsto sustituirá todos los datos actuales. ¿Continuar?`)&&await saveData(migrated,{replaceUnreadable:true})){alert('Datos importados y validados.');renderSettings();updateHome()}}catch(err){alert('Archivo JSON no válido: '+(err?.message||'error desconocido'))}finally{e.target.value=''}};
+$('resetDemo').onclick=async ()=>{if(confirm('¿Restablecer toda la aplicación?')&&await saveData(clone(defaults),{replaceUnreadable:true}))location.reload()};
 
 $('handSwelling').addEventListener('input',()=>toggleHandDetail());$('handPain').addEventListener('input',()=>toggleHandDetail());$('toggleHandDetail').onclick=()=>toggleHandDetail($('handDetail').classList.contains('hidden'));$('handSymptoms').onchange=()=>{toggleHandSymptoms($('handSymptoms').checked);updateCompactSummaries()};$('stressSymptoms').onchange=toggleStressDetail;$('respiratorySymptoms').onchange=()=>{$('respiratoryDetail').classList.toggle('hidden',!$('respiratorySymptoms').checked);updateCompactSummaries()};$('bowelFrequency').onchange=toggleBowelDetail;$('usualFood').onchange=()=>{$('foodException').classList.toggle('hidden',$('usualFood').checked);updateCompactSummaries()};document.querySelectorAll('[name=dayContext]').forEach(x=>x.onchange=()=>{if(x.value==='routine'&&x.checked)document.querySelectorAll('[name=dayContext]').forEach(y=>{if(y!==x)y.checked=false});else if(x.checked){const r=document.querySelector('[name=dayContext][value=routine]');if(r)r.checked=false}const custom=document.querySelector('[name=dayContext][value=custom]')?.checked;$('customContextWrap').classList.toggle('hidden',!custom);updateCompactSummaries()});$('entryDate').onchange=()=>{updateTemporalLabels();updateAnthropometryHints()};$('handCamera').onchange=async e=>{await addHandPhotos(e.target.files||[]);e.target.value=''};$('handGallery').onchange=async e=>{await addHandPhotos(e.target.files||[]);e.target.value=''};bindVoiceButtons();bindExpandableTextareas();
-if('serviceWorker' in navigator)navigator.serviceWorker.register(`sw.js?v=${APP_VERSION}`);
-renderRespiratoryFields();
-resetForm();
-renderSettings();
-bindSmartNumericTimeFields();
-updateHome();
+if('serviceWorker' in navigator)navigator.serviceWorker.register(`sw.js?v=${APP_VERSION}`).catch(()=>{});
+async function initializeHealthLab(){
+ setStorageControlsInert(true);
+ try{
+  await loadData();
+  renderRespiratoryFields();
+  resetForm();
+  renderSettings();
+  bindSmartNumericTimeFields();
+  updateHome();
+ }finally{
+  setStorageControlsInert(false);
+ }
+}
+const healthLabReady=initializeHealthLab();
