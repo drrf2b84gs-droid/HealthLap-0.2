@@ -170,6 +170,13 @@ input:focus,textarea:focus,select:focus{scroll-margin-top:calc(env(safe-area-ins
 .episode-card h4,.episode-card p{margin:0 0 8px}
 .episode-notes{white-space:pre-wrap}
 .activity-training .button-row,.episode-card .button-row{margin-top:8px}
+.event-kinds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.event-kinds [aria-pressed="true"]{background:var(--teal);color:#fff}
+.event-fields>label+label,.event-when,#eventNotesLabel,.day-event-summary{margin-top:12px}
+#episodes [hidden],.day-event-summary[hidden]{display:none}
+.day-event-summary{padding:10px;border-radius:10px;background:var(--soft)}
+.day-event-summary p{margin:0}
+.day-event-summary ul,.quick-events-list{margin:6px 0;padding-left:20px}
 @media(max-width:620px){
  input:not([type=checkbox]):not([type=range]),select,textarea{font-size:16px}
 }

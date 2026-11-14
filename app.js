@@ -1,4 +1,4 @@
-const APP_VERSION='1.3.1';
+const APP_VERSION='1.3.2';
 const CURRENT_SCHEMA_VERSION=16;
 const EXPORT_FORMAT_VERSION=4;
 const EXPORT_FORMAT='healthlab-json';
@@ -163,7 +163,7 @@ function migrate(d){
   if(!e.handDetails){const old=e.handDetail||{},blank=()=>({fingers:[],joint:'',mobilityLimited:false});e.handDetails={right:blank(),left:blank(),notes:old.notes||'',photos:old.photo?[old.photo]:[]}}
   if(!Array.isArray(e.handDetails.photos))e.handDetails.photos=[];
   e.appleRestingHeartRate=e.appleRestingHeartRate??e.restingHeartRate??'';e.appleHrvAverage=e.appleHrvAverage??'';e.hrv4TrainingScore=e.hrv4TrainingScore??'';e.hrv4TrainingStatus=e.hrv4TrainingStatus||'';
-  e.bowelFrequency=e.bowelFrequency==='4+'?4:(e.bowelFrequency??0);e.bristolType=e.bristolType??'';e.bowelUrgency=!!e.bowelUrgency;e.bowelPain=!!e.bowelPain;e.bowelBlood=!!e.bowelBlood;e.bowelNotes=e.bowelNotes||'';
+  e.bowelFrequency=e.bowelFrequency==='4+'?4:(e.bowelFrequency===undefined?0:e.bowelFrequency);e.bristolType=e.bristolType??'';e.bowelUrgency=!!e.bowelUrgency;e.bowelPain=!!e.bowelPain;e.bowelBlood=!!e.bowelBlood;e.bowelNotes=e.bowelNotes||'';
   e.dayContexts=Array.isArray(e.dayContexts)?e.dayContexts:(e.dayContext?[e.dayContext]:['routine']);if(!e.dayContexts.length)e.dayContexts=['routine'];e.foodChanges=Array.isArray(e.foodChanges)?e.foodChanges:(e.foodChange?[e.foodChange]:[]);
   e.respiratorySymptoms=!!e.respiratorySymptoms;e.nasalCongestion=Number(e.nasalCongestion||0);e.mucus=Number(e.mucus||0);e.throatMucus=!!e.throatMucus;e.postNasalDrip=!!e.postNasalDrip;e.sneezing=!!e.sneezing;e.cough=!!e.cough;e.dailyBreathlessness=!!e.dailyBreathlessness;e.respiratoryNotes=e.respiratoryNotes||'';
  }
@@ -563,12 +563,64 @@ function restoreRespiratory(entry){
  for(const [id] of respiratoryFields)$(id).checked=!!entry[id];
 }
 let editingEpisodeId=null;
+let activeEventKind='episode';
+let episodeDraftChanged=false;
+const eventKinds={
+ episode:{name:'episodio',panel:'episodeSymptoms'},
+ bowel:{name:'deposición',panel:'quickBowel'},
+ context:{name:'contexto',panel:'quickContext'},
+ food:{name:'alimentación',panel:'quickFood'}
+};
+const isTimelineEvent=event=>Object.hasOwn(eventKinds,event.kind);
 const episodeInputs={
  type:'episodeType',symptom:'episodeSymptom',date:'episodeDate',time:'episodeTime',
  duration:'episodeDuration',intensity:'episodeIntensity',location:'episodeLocation',side:'episodeSide',
  context:'episodeContext',trainingId:'episodeTraining',endDate:'episodeEndDate',
  endTime:'episodeEndTime',notes:'episodeNotes'
 };
+const quickEventInputs={
+ bowel:{bristolType:'eventBristol',urgency:'eventBowelUrgency',pain:'eventBowelPain',blood:'eventBowelBlood'},
+ context:{contextType:'eventContext'},
+ food:{food:'eventFood',foodType:'eventFoodType'}
+};
+const eventKindButtons=[...document.querySelectorAll('[data-event-kind]')];
+
+function addEventSelectOptions(id,options,placeholder){
+ const select=$(id);
+ select.add(new Option(placeholder,''));
+ for(const [value,label] of options)select.add(new Option(label,value));
+}
+addEventSelectOptions('eventBristol',[...$('bristolType').options].filter(option=>option.value)
+ .map(option=>[option.value,option.text]),'Sin indicar');
+addEventSelectOptions('eventContext',[...document.querySelectorAll('[name=dayContext]')]
+ .map(field=>[field.value,field.nextElementSibling.textContent]),'Seleccionar contexto');
+addEventSelectOptions('eventFoodType',[
+ ['Alimento especial','Alimento especial'],['Capricho','Capricho o comida poco saludable'],
+ ...[...document.querySelectorAll('[name=foodChange]')].map(field=>[field.value,field.nextElementSibling.textContent])
+],'Sin indicar');
+
+function selectEventKind(kind){
+ activeEventKind=kind;
+ const {name}=eventKinds[kind];
+ const clinical=kind==='episode';
+ for(const [key,{panel}] of Object.entries(eventKinds))$(panel).hidden=key!==kind;
+ for(const button of eventKindButtons){
+  button.setAttribute('aria-pressed',String(button.dataset.eventKind===kind));
+  button.disabled=!!editingEpisodeId&&button.dataset.eventKind!==kind;
+ }
+ $('episodeDetails').hidden=!clinical;
+ $('eventNotesLabel').hidden=clinical;
+ $('episodeFormTitle').textContent=editingEpisodeId?'Modificar '+name:({
+  episode:'Registrar episodio',bowel:'Registrar deposición',context:'Anotar contexto',food:'Anotar comida o bebida'
+ })[kind];
+ $('saveEpisode').textContent=editingEpisodeId?'Guardar cambios':({
+  episode:'Guardar episodio',bowel:'Guardar deposición',context:'Guardar contexto',food:'Guardar alimento'
+ })[kind];
+ $('eventDateLabel').textContent=clinical?'Fecha de inicio':'Fecha';
+ $('eventTimeLabel').textContent=clinical?'Hora de inicio':'Hora';
+}
+eventKindButtons.forEach(button=>button.onclick=()=>selectEventKind(button.dataset.eventKind));
+$('episodeForm').addEventListener('input',()=>episodeDraftChanged=true);
 function episodeTrainingOptions(){
  const historical=data.entries.flatMap(entry=>(entry.trainings||[]).map(training=>({
   ...training,date:training.date||previousISO(entry.date)
@@ -584,38 +636,66 @@ function prepareEpisodes(){
   select.add(new Option('Entrenamiento eliminado',selected));
  }
  select.value=selected;
- if(!editingEpisodeId&&!$('episodeType').value&&!$('episodeSymptom').value.trim())resetEpisodeForm();
+ if(!editingEpisodeId&&!episodeDraftChanged)resetEpisodeForm();
  renderEpisodeList();
 }
 function resetEpisodeForm(){
  const now=new Date();
  editingEpisodeId=null;
+ episodeDraftChanged=false;
  $('episodeForm').reset();
  $('episodeDate').value=localISO(now);
  $('episodeTime').value=localTime(now);
- $('episodeFormTitle').textContent='Registrar episodio';
  $('episodeDetails').open=false;
  $('cancelEpisode').classList.add('hidden');
+ selectEventKind('episode');
 }
 function openEpisode(episode){
  go('episodes');
+ resetEpisodeForm();
  editingEpisodeId=episode.uuid;
+ selectEventKind(episode.kind);
+ $('cancelEpisode').classList.remove('hidden');
+ if(episode.kind!=='episode'){
+  $('episodeDate').value=episode.date;
+  $('episodeTime').value=episode.time||'';
+  $('eventNotes').value=episode.notes||'';
+  for(const [key,id] of Object.entries(quickEventInputs[episode.kind])){
+   const field=$(id);
+   if(field.type==='checkbox')field.checked=!!episode[key];
+   else field.value=episode[key]??'';
+  }
+  return;
+ }
  if(episode.trainingId&&!Array.from($('episodeTraining').options).some(option=>option.value===episode.trainingId)){
   $('episodeTraining').add(new Option('Entrenamiento eliminado',episode.trainingId));
  }
  for(const [key,id] of Object.entries(episodeInputs))$(id).value=episode[key]??'';
- $('episodeFormTitle').textContent='Editar episodio';
  $('episodeDetails').open=Object.keys(episodeInputs).slice(4).some(key=>episode[key]!=null&&episode[key]!=='');
- $('cancelEpisode').classList.remove('hidden');
+}
+function eventOptionText(id,value){
+ return [...$(id).options].find(option=>option.value===String(value))?.text||String(value??'');
+}
+function quickEventDetails(event){
+ if(event.kind==='bowel')return [
+  event.bristolType==null?'':`Bristol ${eventOptionText('eventBristol',event.bristolType)}`,
+  event.urgency?'Urgencia':'',event.pain?'Dolor':'',event.blood?'Sangre visible':''
+ ].filter(Boolean);
+ if(event.kind==='context')return [eventOptionText('eventContext',event.contextType)].filter(Boolean);
+ return [event.food,event.foodType?eventOptionText('eventFoodType',event.foodType):''].filter(Boolean);
 }
 function episodeSummary(episode){
  const linked=episode.trainingId?episodeTrainingOptions().find(training=>training.uuid===episode.trainingId):null;
- const details=[
+ const clinical=episode.kind==='episode';
+ const title=clinical
+  ?[episodeTypes[episode.type]||'Episodio',episode.symptom].filter(Boolean).join(' · ')
+  :{bowel:'Deposición',context:'Contexto',food:'Alimentación'}[episode.kind];
+ const details=clinical?[
   episode.location,episode.side,episode.duration,episode.intensity==null?'':`${episode.intensity}/10`,
   episode.context,episode.endDate?`Fin: ${episode.endDate} ${episode.endTime||''}`:'',
   linked?`Entrenamiento: ${linked.typeName} (${linked.date})`:''
- ].filter(Boolean);
- return `<article class="card episode-card"><h4>${esc(episodeTypes[episode.type]||'Episodio')}${episode.symptom?' · '+esc(episode.symptom):''}</h4>
+ ].filter(Boolean):quickEventDetails(episode);
+ return `<article class="card episode-card"><h4>${esc(title)}</h4>
  <p>${esc(episode.date)}${episode.time?' · '+esc(episode.time):''}</p>
  ${details.length?`<p>${details.map(esc).join(' · ')}</p>`:''}
  ${episode.notes?`<p class="episode-notes">${esc(episode.notes)}</p>`:''}
@@ -623,25 +703,39 @@ function episodeSummary(episode){
  <button type="button" class="danger" data-delete-episode="${esc(episode.uuid)}">Eliminar</button></div></article>`;
 }
 function renderEpisodeList(){
- const episodes=data.events.filter(item=>item.kind==='episode').sort((a,b)=>
+ const episodes=data.events.filter(isTimelineEvent).sort((a,b)=>
   (b.date+(b.time||'')).localeCompare(a.date+(a.time||'')));
  $('episodeList').innerHTML=episodes.map(episodeSummary).join('');
 }
 $('cancelEpisode').onclick=resetEpisodeForm;
 $('episodeForm').onsubmit=async event=>{
  event.preventDefault();
- const fields=Object.fromEntries(Object.entries(episodeInputs).map(([key,id])=>[key,getVal(id).trim()]));
- if(!fields.date||(!fields.type&&!fields.symptom))return alert('Indica la fecha y el tipo o una descripción del episodio.');
- if(fields.endTime&&!fields.endDate)fields.endDate=fields.date;
- if(fields.endDate&&(fields.endDate<fields.date||
+ const kind=activeEventKind;
+ let fields={date:getVal('episodeDate'),time:getVal('episodeTime'),notes:getVal('eventNotes').trim()};
+ if(!fields.date)return alert('Indica la fecha.');
+ if(kind==='episode'){
+  fields=Object.fromEntries(Object.entries(episodeInputs).map(([key,id])=>[key,getVal(id).trim()]));
+  if(!fields.type&&!fields.symptom)return alert('Indica el tipo o una descripción del episodio.');
+  if(fields.endTime&&!fields.endDate)fields.endDate=fields.date;
+  if(fields.endDate&&(fields.endDate<fields.date||
     (fields.endDate===fields.date&&fields.time&&fields.endTime&&fields.endTime<fields.time))){
-  return alert('El fin del episodio debe ser posterior al inicio.');
+   return alert('El fin del episodio debe ser posterior al inicio.');
+  }
+  fields.intensity=nullableNumber(fields.intensity);
+ }else{
+  for(const [key,id] of Object.entries(quickEventInputs[kind])){
+   const field=$(id);
+   fields[key]=field.type==='checkbox'?field.checked:field.value.trim();
+  }
+  if(kind==='bowel')fields.bristolType=nullableNumber(fields.bristolType);
+  if(kind==='context'&&!fields.contextType&&!fields.notes)return alert('Elige un contexto o descríbelo en observaciones.');
+  if(kind==='food'&&!fields.food&&!fields.foodType&&!fields.notes)return alert('Indica qué comiste o selecciona un tipo de cambio.');
  }
  const previous=data.events.find(item=>item.uuid===editingEpisodeId);
  const now=new Date().toISOString();
  const episode={
-  ...previous,...fields,kind:'episode',uuid:previous?.uuid||makeUuid(),
-  createdAt:previous?.createdAt||now,updatedAt:now,intensity:nullableNumber(fields.intensity)
+  ...previous,...fields,kind,uuid:previous?.uuid||makeUuid(),
+  createdAt:previous?.createdAt||now,updatedAt:now
  };
  const events=previous?data.events.map(item=>item.uuid===episode.uuid?episode:item):[...data.events,episode];
  if(!await saveData({...data,events}))return;
@@ -697,7 +791,46 @@ function resetForm(){
  trainingDrafts=[];renderTrainingList();renderRecordItems();bindExpandableTextareas();bindRanges();bindScaleInfo();updateTemporalLabels();
 }
 function previousISO(date){const d=new Date(date+'T12:00:00');d.setDate(d.getDate()-1);return localISO(d)}
-function updateTemporalLabels(){const date=$('entryDate').value||localISO(),prev=previousISO(date);document.querySelectorAll('.kicker').forEach(()=>{});const labels=document.querySelectorAll('#record .kicker');if(labels[0])labels[0].textContent=`AL DESPERTAR · ${date.split('-').reverse().slice(0,2).join('/')}`}
+function updateTemporalLabels(){
+ const date=$('entryDate').value||localISO();
+ document.querySelector('#record .kicker').textContent=`AL DESPERTAR · ${date.split('-').reverse().slice(0,2).join('/')}`;
+ renderDailyEventSummaries(previousISO(date));
+}
+function eventsForDate(date){
+ return data.events.filter(item=>isTimelineEvent(item)&&item.date===date)
+  .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+}
+function quickEventLine(item){
+ return [item.time,...quickEventDetails(item),item.notes].filter(Boolean).map(esc).join(' · ')||'Sin detalles';
+}
+function quickEventList(items){
+ return `<ul class="quick-events-list">${items.map(item=>`<li>${quickEventLine(item)}</li>`).join('')}</ul>`;
+}
+function renderDailyEventSummaries(date){
+ const items=eventsForDate(date);
+ const sections={bowel:'dayBowelEvents',context:'dayContextEvents',food:'dayFoodEvents'};
+ for(const [kind,id] of Object.entries(sections)){
+  const section=$(id);
+  const events=items.filter(item=>item.kind===kind);
+  section.hidden=!events.length;
+  section.innerHTML=events.length?`<p><strong>${events.length} ${events.length===1?'anotación guardada':'anotaciones guardadas'}</strong></p>${quickEventList(events)}${kind==='bowel'?'<p class="muted">Si rellenas el total del día, incluye las que ya anotaste.</p>':''}`:'';
+  if(kind==='bowel'){
+   $('bowelFrequencyLabel').textContent=events.length?'Total del día (opcional)':'Número de deposiciones';
+   const none=$('bowelFrequency').options[0];
+   none.text=events.length?'Sin resumen manual':'0';
+  }
+ }
+ updateCompactSummaries();
+}
+function closedDayEvents(date){
+ const items=eventsForDate(date).filter(item=>item.kind!=='episode');
+ return Object.keys(quickEventInputs).map(kind=>{
+  const events=items.filter(item=>item.kind===kind);
+  if(!events.length)return '';
+  const label={bowel:'Deposiciones anotadas',context:'Contextos anotados',food:'Comidas o bebidas anotadas'}[kind];
+  return `<p><b>${label} (${events.length})</b></p>${quickEventList(events)}`;
+ }).join('');
+}
 function latestMeasurement(field,beforeDate='9999-12-31'){return [...data.entries].filter(e=>e.date<=beforeDate&&nullableNumber(e[field])!==null).sort((a,b)=>a.date.localeCompare(b.date)).at(-1)||null}
 function measurementHint(field,unit,beforeDate){const e=latestMeasurement(field,beforeDate||($('entryDate')?.value||localISO()));if(!e)return 'Sin mediciones previas';return `Último: ${Number(e[field]).toFixed(1).replace('.',',')} ${unit} · ${fmtDate(e.date)}`}
 function updateAnthropometryHints(){const d=$('entryDate')?.value||localISO();if($('lastWeightHint'))$('lastWeightHint').textContent=measurementHint('weightKg','kg',d);if($('lastWaistHint'))$('lastWaistHint').textContent=measurementHint('waistCm','cm',d);if($('lastHipHint'))$('lastHipHint').textContent=measurementHint('hipCm','cm',d)}
@@ -705,7 +838,7 @@ function hasHandSymptoms(e){const hd=e?.handDetails||{};return !!e?.paddedHands|
 function toggleHandSymptoms(show){$('handSymptomsDetail').classList.toggle('hidden',!show);if(!show)toggleHandDetail(false)}
 function toggleStressDetail(){const show=$('stressSymptoms').checked;$('stressDetail').classList.toggle('hidden',!show);updateCompactSummaries()}
 function toggleBowelDetail(){const n=Number($('bowelFrequency').value||0);$('bowelDetail').classList.toggle('hidden',n===0);if(n===0){$('bristolType').value='';$('bowelUrgency').checked=false;$('bowelPain').checked=false;$('bowelBlood').checked=false;$('bowelNotes').value=''}updateCompactSummaries()}
-function updateCompactSummaries(){if($('stressSummary')){const bits=[];if($('stressSymptoms')?.checked){const s=getNum('stress');if(s)bits.push(`estrés ${s}/10`);if($('jawTension').checked)bits.push('mandíbula');if($('calfTension').checked)bits.push('gemelos');if($('eyeTic').checked)bits.push('tic ocular')}$('stressSummary').textContent=bits.length?bits.join(' · '):'Sin señales'}if($('respiratorySummary'))$('respiratorySummary').textContent=$('respiratorySymptoms')?.checked?'Con síntomas':'Sin síntomas';if($('bowelSummary')){const n=Number($('bowelFrequency')?.value||0);$('bowelSummary').textContent=n===0?'0 deposiciones':(n>=4?'4 o más deposiciones':`${n} deposición${n===1?'':'es'}`)}if($('foodSummary'))$('foodSummary').textContent=$('usualFood')?.checked?'Habitual':'Distinta de lo habitual';if($('contextSummary')){const vals=[...document.querySelectorAll('[name=dayContext]:checked')].map(x=>x.parentElement?.innerText?.trim()||x.value);$('contextSummary').textContent=vals.length?vals.join(' · '):'Sin contexto'}}
+function updateCompactSummaries(){if($('stressSummary')){const bits=[];if($('stressSymptoms')?.checked){const s=getNum('stress');if(s)bits.push(`estrés ${s}/10`);if($('jawTension').checked)bits.push('mandíbula');if($('calfTension').checked)bits.push('gemelos');if($('eyeTic').checked)bits.push('tic ocular')}$('stressSummary').textContent=bits.length?bits.join(' · '):'Sin señales'}if($('respiratorySummary'))$('respiratorySummary').textContent=$('respiratorySymptoms')?.checked?'Con síntomas':'Sin síntomas';if($('bowelSummary')){const n=Number($('bowelFrequency')?.value||0);const logged=$('dayBowelEvents').querySelectorAll('li').length;$('bowelSummary').textContent=n===0?(logged?logged+(logged===1?' anotada':' anotadas'):'0 deposiciones'):(n>=4?'4 o más deposiciones':`${n} deposición${n===1?'':'es'}`)}if($('foodSummary'))$('foodSummary').textContent=!$('dayFoodEvents').hidden?'Con anotaciones':($('usualFood')?.checked?'Habitual':'Distinta de lo habitual');if($('contextSummary')){const vals=[...document.querySelectorAll('[name=dayContext]:checked')].map(x=>x.parentElement?.innerText?.trim()||x.value);$('contextSummary').textContent=!$('dayContextEvents').hidden?'Con anotaciones':(vals.length?vals.join(' · '):'Sin contexto')}}
 function toggleHandDetail(force){const show=force!==undefined?force:(getNum('handSwelling')>=2||getNum('handPain')>=2);$('handDetail').classList.toggle('hidden',!show);$('toggleHandDetail').textContent=show?'− Ocultar detalle de manos':'＋ Añadir detalle de manos'}
 async function compressImage(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onerror=reject;r.onload=()=>{const img=new Image();img.onload=()=>{const max=1200,scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.78))};img.src=r.result};r.readAsDataURL(file)})}
 function renderHandPhoto(){const box=$('handPhotoPreview');box.innerHTML=handPhotoData.map((src,i)=>`<div class="hand-photo-item"><img class="hand-photo-preview" src="${src}" alt="Foto de manos ${i+1}"><button type="button" class="small-button" data-remove-photo="${i}">Quitar</button></div>`).join('');box.querySelectorAll('[data-remove-photo]').forEach(b=>b.onclick=()=>{handPhotoData.splice(Number(b.dataset.removePhoto),1);renderHandPhoto()})}
@@ -763,10 +896,10 @@ function validateData(obj){
   uuids.add(training.uuid);
   validateTraining(training,`${training.date}, entrenamiento`);
  }
- for(const episode of (obj.events||[]).filter(item=>item.kind==='episode')){
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(episode.date||''))errors.push('Hay un episodio sin fecha válida.');
-  if(!episode.uuid||uuids.has(episode.uuid))errors.push('Hay un episodio sin identificador único.');
-  uuids.add(episode.uuid);
+ for(const event of (obj.events||[]).filter(isTimelineEvent)){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(event.date||''))errors.push('Hay una anotación sin fecha válida.');
+  if(!event.uuid||uuids.has(event.uuid))errors.push('Hay una anotación sin identificador único.');
+  uuids.add(event.uuid);
  }
  return {errors,warnings};
 }
@@ -795,7 +928,10 @@ function buildSummary(payload){
   totalEntries:entries.length,firstEntryDate:entries[0]?.date||null,lastEntryDate:entries.at(-1)?.date||null,
   missingDates:missing,totalTrainings:trainings.length,totalTrainingHours:Number((totalSeconds/3600).toFixed(2)),
   totalDistanceKm:Number(totalKm.toFixed(2)),trainingSessions:counts,
-  totalEpisodes:(payload.events||[]).filter(item=>item.kind==='episode').length
+  totalEpisodes:(payload.events||[]).filter(item=>item.kind==='episode').length,
+  totalBowelEvents:(payload.events||[]).filter(item=>item.kind==='bowel').length,
+  totalContextEvents:(payload.events||[]).filter(item=>item.kind==='context').length,
+  totalFoodEvents:(payload.events||[]).filter(item=>item.kind==='food').length
  };
 }
 function canonicalize(v){if(Array.isArray(v))return v.map(canonicalize);if(v&&typeof v==='object'){const o={};for(const k of Object.keys(v).sort())o[k]=canonicalize(v[k]);return o}return v}
@@ -813,7 +949,10 @@ $('quickForm').onsubmit=async event=>{
   trainings=[...$('trainingList').querySelectorAll('.training-card')].map((card,index)=>collectTraining(card,trainingDrafts[index]));
  }catch(error){return alert(error.message)}
  const handsOn=$('handSymptoms').checked,stressOn=$('stressSymptoms').checked;
- const entry={id:`entry-${date}`,uuid:makeUuid(),date,updatedAt:new Date().toISOString(),revision:1,history:[],source:{...SOURCE},aiAnalysis:null,fatigue:getNum('fatigue'),legFatigue:$('legFatigue')?.checked??(editingDate?!!data.entries.find(x=>x.date===editingDate)?.legFatigue:false),handSwelling:handsOn?getNum('handSwelling'):0,handPain:handsOn?getNum('handPain'):0,abdominalInflammation:getNum('abdominalInflammation'),weightKg:nullableNumber(getVal('weightKg')),waistCm:nullableNumber(getVal('waistCm')),hipCm:nullableNumber(getVal('hipCm')),stress:stressOn?getNum('stress'):0,eyeTic:stressOn&&$('eyeTic').checked,peeling:handsOn?getNum('peeling'):0,calfTension:stressOn&&$('calfTension').checked,jawTension:stressOn&&$('jawTension').checked,handDetails:{right:{fingers:handsOn?[...document.querySelectorAll('[name=rightFinger]:checked')].map(x=>x.value):[],joint:handsOn?getVal('rightJoint'):'',mobilityLimited:handsOn&&$('rightMobilityLimited').checked},left:{fingers:handsOn?[...document.querySelectorAll('[name=leftFinger]:checked')].map(x=>x.value):[],joint:handsOn?getVal('leftJoint'):'',mobilityLimited:handsOn&&$('leftMobilityLimited').checked},notes:handsOn?getVal('handNotes').trim():'',photos:handsOn?clone(handPhotoData):[]},appleRestingHeartRate:getVal('appleRestingHeartRate'),appleHrvAverage:getVal('appleHrvAverage'),appleHrvMinMs:hrvMin,appleHrvMaxMs:hrvMax,wakeNotes:getVal('wakeNotes').trim(),paddedHands:handsOn&&$('paddedHands').checked,bowelFrequency:getVal('bowelFrequency'),bristolType:getVal('bristolType'),bowelUrgency:$('bowelUrgency').checked,bowelPain:$('bowelPain').checked,bowelBlood:$('bowelBlood').checked,bowelNotes:getVal('bowelNotes').trim(),dayContexts:[...document.querySelectorAll('[name=dayContext]:checked')].map(x=>x.value),customContext:document.querySelector('[name=dayContext][value=custom]')?.checked?getVal('customContext').trim():'',respiratorySymptoms:$('respiratorySymptoms').checked,nasalCongestion:getNum('nasalCongestion'),mucus:getNum('mucus'),...collectRespiratory(),sleepQuality:getNum('sleepQuality'),sleepDuration:minutesText(sleepMinutes||0),sleepMinutes:sleepMinutes||0,usualSchedule:$('usualSchedule').checked,sleepNotes:$('usualSchedule').checked?'':getVal('sleepNotes').trim(),usualFood:$('usualFood').checked,foodChanges:$('usualFood').checked?[]:[...document.querySelectorAll('[name=foodChange]:checked')].map(x=>x.value),foodNotes:$('usualFood').checked?'':getVal('foodNotes').trim(),trainings,dailySupplements:collectItems('dailySupplements'),sportSupplements:collectItems('sportSupplements'),medicationsTaken:collectItems('medications'),notes:getVal('notes').trim()};
+ const bowelCount=getVal('bowelFrequency');
+ const bowelFrequency=bowelCount==='0'&&eventsForDate(previousISO(date)).some(item=>item.kind==='bowel')
+  ?null:bowelCount;
+ const entry={id:`entry-${date}`,uuid:makeUuid(),date,updatedAt:new Date().toISOString(),revision:1,history:[],source:{...SOURCE},aiAnalysis:null,fatigue:getNum('fatigue'),legFatigue:$('legFatigue')?.checked??(editingDate?!!data.entries.find(x=>x.date===editingDate)?.legFatigue:false),handSwelling:handsOn?getNum('handSwelling'):0,handPain:handsOn?getNum('handPain'):0,abdominalInflammation:getNum('abdominalInflammation'),weightKg:nullableNumber(getVal('weightKg')),waistCm:nullableNumber(getVal('waistCm')),hipCm:nullableNumber(getVal('hipCm')),stress:stressOn?getNum('stress'):0,eyeTic:stressOn&&$('eyeTic').checked,peeling:handsOn?getNum('peeling'):0,calfTension:stressOn&&$('calfTension').checked,jawTension:stressOn&&$('jawTension').checked,handDetails:{right:{fingers:handsOn?[...document.querySelectorAll('[name=rightFinger]:checked')].map(x=>x.value):[],joint:handsOn?getVal('rightJoint'):'',mobilityLimited:handsOn&&$('rightMobilityLimited').checked},left:{fingers:handsOn?[...document.querySelectorAll('[name=leftFinger]:checked')].map(x=>x.value):[],joint:handsOn?getVal('leftJoint'):'',mobilityLimited:handsOn&&$('leftMobilityLimited').checked},notes:handsOn?getVal('handNotes').trim():'',photos:handsOn?clone(handPhotoData):[]},appleRestingHeartRate:getVal('appleRestingHeartRate'),appleHrvAverage:getVal('appleHrvAverage'),appleHrvMinMs:hrvMin,appleHrvMaxMs:hrvMax,wakeNotes:getVal('wakeNotes').trim(),paddedHands:handsOn&&$('paddedHands').checked,bowelFrequency,bristolType:getVal('bristolType'),bowelUrgency:$('bowelUrgency').checked,bowelPain:$('bowelPain').checked,bowelBlood:$('bowelBlood').checked,bowelNotes:getVal('bowelNotes').trim(),dayContexts:[...document.querySelectorAll('[name=dayContext]:checked')].map(x=>x.value),customContext:document.querySelector('[name=dayContext][value=custom]')?.checked?getVal('customContext').trim():'',respiratorySymptoms:$('respiratorySymptoms').checked,nasalCongestion:getNum('nasalCongestion'),mucus:getNum('mucus'),...collectRespiratory(),sleepQuality:getNum('sleepQuality'),sleepDuration:minutesText(sleepMinutes||0),sleepMinutes:sleepMinutes||0,usualSchedule:$('usualSchedule').checked,sleepNotes:$('usualSchedule').checked?'':getVal('sleepNotes').trim(),usualFood:$('usualFood').checked,foodChanges:$('usualFood').checked?[]:[...document.querySelectorAll('[name=foodChange]:checked')].map(x=>x.value),foodNotes:$('usualFood').checked?'':getVal('foodNotes').trim(),trainings,dailySupplements:collectItems('dailySupplements'),sportSupplements:collectItems('sportSupplements'),medicationsTaken:collectItems('medications'),notes:getVal('notes').trim()};
  const entries=[...data.entries];
  const targetIndex=entries.findIndex(x=>x.date===date);
  const index=editingDate?entries.findIndex(x=>x.date===editingDate):targetIndex;
@@ -887,7 +1026,7 @@ function renderCalendar(){
  for(let day=1;day<=last.getDate();day++){
   const date=localISO(new Date(year,month,day));
   const entry=data.entries.find(x=>x.date===date);
-  const hasActivity=data.trainings.some(item=>item.date===date)||data.events.some(item=>item.kind==='episode'&&item.date===date);
+  const hasActivity=data.trainings.some(item=>item.date===date)||data.events.some(item=>isTimelineEvent(item)&&item.date===date);
   let severity=0;
   if(entry){
    const max=Math.max(entry.handSwelling||0,entry.handPain||0,entry.fatigue||0,entry.legFatigue||0,(entry.abdominalInflammation||0)*2.5);
@@ -921,14 +1060,13 @@ function trainingSummary(training){
 }
 function activityForDate(date){
  const trainings=data.trainings.filter(item=>item.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
- const episodes=data.events.filter(item=>item.kind==='episode'&&item.date===date)
-  .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+ const episodes=eventsForDate(date);
  return [
   trainings.length?`<article class="card"><h3>Entrenamientos del día</h3>${trainings.map(training=>`
   <div class="activity-training">${trainingSummary(training)}
   <div class="button-row"><button class="secondary-button" data-edit-training="${esc(training.uuid)}">Editar</button>
   <button class="danger" data-delete-training="${esc(training.uuid)}">Eliminar</button></div></div>`).join('')}</article>`:'',
-  episodes.length?`<h3>Episodios del día</h3>${episodes.map(episodeSummary).join('')}`:''
+  episodes.length?`<h3>Anotaciones del día</h3>${episodes.map(episodeSummary).join('')}`:''
  ].join('');
 }
 async function handleActivityAction(event){
@@ -947,7 +1085,7 @@ async function handleActivityAction(event){
   const trainings=data.trainings.filter(item=>item.uuid!==deleteTraining);
   if(await saveData({...data,trainings}))renderCalendar();
  }
- if(deleteEpisode&&confirm('¿Eliminar este episodio?')){
+ if(deleteEpisode&&confirm('¿Eliminar esta anotación?')){
   const events=data.events.filter(item=>item.uuid!==deleteEpisode);
   if(await saveData({...data,events})){
    if(editingEpisodeId===deleteEpisode)resetEpisodeForm();
@@ -980,7 +1118,13 @@ function respiratorySummary(entry){
  return `<p><b>🤧 Respiratorio:</b> ${symptoms.map(esc).join(' · ')}</p>${entry.respiratoryNotes?`<p>${esc(entry.respiratoryNotes)}</p>`:''}`;
 }
 function handSideSummary(label,h){if(!h)return '';const bits=[];if(h.fingers?.length)bits.push(h.fingers.join(', '));if(h.joint)bits.push(h.joint);if(h.mobilityLimited)bits.push('movilidad limitada');return bits.length?`<p><b>${label}:</b> ${esc(bits.join(' · '))}</p>`:''}
-function showDay(date){const e=data.entries.find(x=>x.date===date),activity=activityForDate(date);if(!e){$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>${fmtDate(date)}</strong><p class="muted">Sin registro diario.</p></div>${activity}`;return}const prev=previousISO(date),supp=[...(e.dailySupplements||[]),...(e.sportSupplements||[])],hd=e.handDetails||{},ctxMap={routine:'🏠 Rutina habitual',vacation:'🌴 Vacaciones',travel:'✈️ Viaje',hotel:'🏨 Hotel',competition:'🏃 Competición',work:'💼 Mucho trabajo',illness:'🤒 Enfermedad',family:'🎉 Evento familiar',custom:e.customContext||'Otro'},ctx=(e.dayContexts||[e.dayContext||'routine']).map(x=>ctxMap[x]||x).join(' · ');const bowel=e.bowelFrequency!==''||e.bristolType?`<p><b>🚽 Tránsito:</b> ${e.bowelFrequency!==''?`${esc(e.bowelFrequency)} deposiciones`:''}${e.bowelFrequency!==''&&e.bristolType?' · ':''}${e.bristolType?`Bristol ${esc(e.bristolType)}`:''}${e.bowelUrgency?' · urgencia':''}${e.bowelPain?' · dolor':''}${e.bowelBlood?' · sangre visible':''}</p>${e.bowelNotes?`<p>${esc(e.bowelNotes)}</p>`:''}`:'';$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>Registro realizado para ${fmtDate(date)}</strong><p class="muted temporal-note">Este registro combina el cierre del ${fmtDate(prev)} con el sueño ${prev} → ${date} y tu estado al despertar del ${fmtDate(date)}.</p><div class="detail-section"><h4>🌙 Noche ${prev} → ${date}</h4><p><b>Sueño:</b> ${e.sleepQuality??0}/100 · ${esc(e.sleepDuration||minutesText(e.sleepMinutes||0))}${e.usualSchedule===false?' · horario no habitual':''}</p>${e.sleepNotes?`<p>${esc(e.sleepNotes)}</p>`:''}</div><div class="detail-section"><h4>🌅 Al despertar · ${date}</h4><p><b>Estado:</b> cansancio ${e.fatigue}/10${e.legFatigue?' · piernas cargadas (dato histórico)':''}</p><p><b>Manos:</b> inflamación ${e.handSwelling}/10 · dolor ${e.handPain}/10 · descamación ${e.peeling}/3</p><p><b>🫃 Inflamación abdominal:</b> ${e.abdominalInflammation??0}/4${e.weightKg!=null?` · <b>⚖️ Peso:</b> ${e.weightKg} kg`:''}${e.waistCm!=null?` · <b>Cintura:</b> ${e.waistCm} cm`:''}${e.hipCm!=null?` · <b>Cadera:</b> ${e.hipCm} cm`:''}</p>${handSideSummary('Derecha',hd.right)}${handSideSummary('Izquierda',hd.left)}${hd.notes?`<p>${esc(hd.notes)}</p>`:''}${(hd.photos||[]).map((x,i)=>`<img class="history-hand-photo" src="${x}" alt="Foto de manos ${i+1}">`).join('')}${e.paddedHands?'<p>Sensación de manos acolchadas</p>':''}${e.wakeNotes?`<p><b>Observaciones al despertar:</b> ${esc(e.wakeNotes)}</p>`:''}</div><div class="detail-section"><h4>📆 Día cerrado · ${prev}</h4><p><b>Contexto:</b> ${esc(ctx)}</p><p><b>Estrés:</b> ${e.stress||0}/10${e.jawTension?' · tensión mandibular':''}${e.calfTension?' · tensión gemelos':''}${e.eyeTic?' · tic ocular':''}</p>${recoverySummary(e)}${respiratorySummary(e)}${bowel}${(e.trainings||[]).map(trainingSummary).join('')}${supp.length?`<p><b>💊 Suplementos:</b> ${supp.map(s=>`${esc(s.name)} ${s.amount} ${esc(s.unit)}`).join(' · ')}</p>`:''}${(e.medicationsTaken||[]).length?`<p><b>💉 Medicación:</b> ${e.medicationsTaken.map(s=>`${esc(s.name)} ${s.amount} ${esc(s.unit)}`).join(' · ')}</p>`:''}${e.usualFood===false?`<p><b>🍽️ Alimentación:</b> ${esc((e.foodChanges||[e.foodChange].filter(Boolean)).join(' · '))}${e.foodNotes?` · ${esc(e.foodNotes)}`:''}</p>`:''}${e.notes?`<p><b>Observaciones:</b> ${esc(e.notes)}</p>`:''}</div></div><div class="button-row"><button class="secondary-button" onclick="editEntry('${date}')">Editar</button><button class="danger" onclick="deleteEntry('${date}')">Eliminar</button></div></div>${activity}`}
+function showDay(date){const e=data.entries.find(x=>x.date===date),activity=activityForDate(date);if(!e){$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>${fmtDate(date)}</strong><p class="muted">Sin registro diario.</p></div>${activity}`;return}const prev=previousISO(date),supp=[...(e.dailySupplements||[]),...(e.sportSupplements||[])],hd=e.handDetails||{},ctxMap={routine:'🏠 Rutina habitual',vacation:'🌴 Vacaciones',travel:'✈️ Viaje',hotel:'🏨 Hotel',competition:'🏃 Competición',work:'💼 Mucho trabajo',illness:'🤒 Enfermedad',family:'🎉 Evento familiar',custom:e.customContext||'Otro'},ctx=(e.dayContexts||[e.dayContext||'routine']).map(x=>ctxMap[x]||x).join(' · ');const hasBowelEvents=eventsForDate(prev).some(item=>item.kind==='bowel');
+ const showBowelCount=e.bowelFrequency!=null&&e.bowelFrequency!==''&&(!hasBowelEvents||Number(e.bowelFrequency)>0);
+ const bowelBits=[
+  showBowelCount?`${Number(e.bowelFrequency)===4?'4 o más':e.bowelFrequency} deposiciones`:'',
+  e.bristolType?`Bristol ${e.bristolType}`:'',e.bowelUrgency?'urgencia':'',e.bowelPain?'dolor':'',e.bowelBlood?'sangre visible':''
+ ].filter(Boolean);
+ const bowel=bowelBits.length||e.bowelNotes?`<p><b>🚽 ${hasBowelEvents?'Resumen manual del tránsito':'Tránsito'}:</b> ${bowelBits.map(esc).join(' · ')}</p>${e.bowelNotes?`<p>${esc(e.bowelNotes)}</p>`:''}`:'';$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>Registro realizado para ${fmtDate(date)}</strong><p class="muted temporal-note">Este registro combina el cierre del ${fmtDate(prev)} con el sueño ${prev} → ${date} y tu estado al despertar del ${fmtDate(date)}.</p><div class="detail-section"><h4>🌙 Noche ${prev} → ${date}</h4><p><b>Sueño:</b> ${e.sleepQuality??0}/100 · ${esc(e.sleepDuration||minutesText(e.sleepMinutes||0))}${e.usualSchedule===false?' · horario no habitual':''}</p>${e.sleepNotes?`<p>${esc(e.sleepNotes)}</p>`:''}</div><div class="detail-section"><h4>🌅 Al despertar · ${date}</h4><p><b>Estado:</b> cansancio ${e.fatigue}/10${e.legFatigue?' · piernas cargadas (dato histórico)':''}</p><p><b>Manos:</b> inflamación ${e.handSwelling}/10 · dolor ${e.handPain}/10 · descamación ${e.peeling}/3</p><p><b>🫃 Inflamación abdominal:</b> ${e.abdominalInflammation??0}/4${e.weightKg!=null?` · <b>⚖️ Peso:</b> ${e.weightKg} kg`:''}${e.waistCm!=null?` · <b>Cintura:</b> ${e.waistCm} cm`:''}${e.hipCm!=null?` · <b>Cadera:</b> ${e.hipCm} cm`:''}</p>${handSideSummary('Derecha',hd.right)}${handSideSummary('Izquierda',hd.left)}${hd.notes?`<p>${esc(hd.notes)}</p>`:''}${(hd.photos||[]).map((x,i)=>`<img class="history-hand-photo" src="${x}" alt="Foto de manos ${i+1}">`).join('')}${e.paddedHands?'<p>Sensación de manos acolchadas</p>':''}${e.wakeNotes?`<p><b>Observaciones al despertar:</b> ${esc(e.wakeNotes)}</p>`:''}</div><div class="detail-section"><h4>📆 Día cerrado · ${prev}</h4><p><b>Contexto:</b> ${esc(ctx)}</p><p><b>Estrés:</b> ${e.stress||0}/10${e.jawTension?' · tensión mandibular':''}${e.calfTension?' · tensión gemelos':''}${e.eyeTic?' · tic ocular':''}</p>${recoverySummary(e)}${respiratorySummary(e)}${bowel}${(e.trainings||[]).map(trainingSummary).join('')}${supp.length?`<p><b>💊 Suplementos:</b> ${supp.map(s=>`${esc(s.name)} ${s.amount} ${esc(s.unit)}`).join(' · ')}</p>`:''}${(e.medicationsTaken||[]).length?`<p><b>💉 Medicación:</b> ${e.medicationsTaken.map(s=>`${esc(s.name)} ${s.amount} ${esc(s.unit)}`).join(' · ')}</p>`:''}${e.usualFood===false?`<p><b>🍽️ Alimentación:</b> ${esc((e.foodChanges||[e.foodChange].filter(Boolean)).join(' · '))}${e.foodNotes?` · ${esc(e.foodNotes)}`:''}</p>`:''}${e.notes?`<p><b>Observaciones:</b> ${esc(e.notes)}</p>`:''}${closedDayEvents(prev)}</div></div><div class="button-row"><button class="secondary-button" onclick="editEntry('${date}')">Editar</button><button class="danger" onclick="deleteEntry('${date}')">Eliminar</button></div></div>${activity}`}
 window.deleteEntry=async date=>{
  if(!confirm('¿Eliminar este registro?'))return;
  const entries=data.entries.filter(entry=>entry.date!==date);
@@ -1055,7 +1199,7 @@ $('exportCsv').onclick=()=>{
  const rows=[['date','recordType','time',...entryFields,'activity']];
  for(const entry of payload.entries)rows.push([entry.date,'daily','',...entryFields.map(field=>entry[field]),null]);
  for(const training of payload.trainings)rows.push([training.date,'training',training.time,...entryFields.map(()=>null),training]);
- for(const episode of payload.events.filter(item=>item.kind==='episode'))rows.push([episode.date,'episode',episode.time,...entryFields.map(()=>null),episode]);
+ for(const event of payload.events.filter(isTimelineEvent))rows.push([event.date,event.kind,event.time,...entryFields.map(()=>null),event]);
  const csv=rows.map(row=>row.map(value=>{
   const text=value&&typeof value==='object'?JSON.stringify(value):String(value??'');
   return '"'+text.replaceAll('"','""')+'"';

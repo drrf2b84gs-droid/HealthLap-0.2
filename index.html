@@ -9,12 +9,12 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="stylesheet" href="styles.css?v=1.3.1">
+  <link rel="stylesheet" href="styles.css?v=1.3.2">
 </head>
 <body>
 <header class="topbar">
   <img src="icon-192.png" class="brand-logo" alt="HealthLab">
-  <div><p class="eyebrow">HEALTHLAB · BETA 1.3.1</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
+  <div><p class="eyebrow">HEALTHLAB · BETA 1.3.2</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
   <button id="themeToggle" class="icon-button" aria-label="Cambiar apariencia">◐</button>
 </header>
 <main>
@@ -23,7 +23,7 @@
   <div class="metric-grid"><article class="metric-card"><span>Inflamación</span><strong>0</strong><small>Hoy</small></article><article class="metric-card amber"><span>Cansancio</span><strong>0</strong><small>Al despertar</small></article></div>
   <div class="button-row quick-actions">
     <button type="button" class="secondary-button" data-go="training">＋ Entrenamiento</button>
-    <button type="button" class="secondary-button" data-go="episodes">＋ Episodio</button>
+    <button type="button" class="secondary-button" data-go="episodes">＋ Anotar ahora</button>
   </div>
 </section>
 
@@ -138,6 +138,7 @@
         <details class="compact-section" id="contextSection">
           <summary><span>🌍 Contexto del día</span><small id="contextSummary">Rutina habitual</small></summary>
           <div class="compact-section-body">
+            <div id="dayContextEvents" class="day-event-summary" hidden></div>
             <p class="muted">Puedes seleccionar varias opciones. <button type="button" class="info-button" data-scale-info="routineContext" aria-label="Qué significa rutina habitual">ⓘ Qué es rutina</button></p>
             <div id="dayContexts" class="multi-select-grid">
               <label class="tick-card"><input type="checkbox" name="dayContext" value="routine"><span>🏠 Rutina habitual</span></label>
@@ -173,7 +174,8 @@
         <details class="compact-section" id="bowelSection">
           <summary><span>🚽 Tránsito intestinal</span><small id="bowelSummary">0 deposiciones</small></summary>
           <div class="compact-section-body">
-            <label>Número de deposiciones<select id="bowelFrequency"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4 o más</option></select></label>
+            <div id="dayBowelEvents" class="day-event-summary" hidden></div>
+            <label><span id="bowelFrequencyLabel">Número de deposiciones</span><select id="bowelFrequency"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4 o más</option></select></label>
             <div id="bowelDetail" class="conditional hidden">
               <label>Bristol predominante<select id="bristolType"><option value="">Sin registrar</option><option value="1">1 · Bolitas duras</option><option value="2">2 · Salchicha grumosa</option><option value="3">3 · Con grietas</option><option value="4">4 · Lisa y blanda</option><option value="5">5 · Trozos blandos</option><option value="6">6 · Pastosa</option><option value="7">7 · Líquida</option></select></label>
               <div class="marker-row"><label class="tick-card"><input id="bowelUrgency" type="checkbox"><span>Urgencia</span></label><label class="tick-card"><input id="bowelPain" type="checkbox"><span>Dolor</span></label><label class="tick-card"><input id="bowelBlood" type="checkbox"><span>Sangre visible</span></label></div>
@@ -185,6 +187,7 @@
         <details class="compact-section" id="foodSection">
           <summary><span>🍽️ Alimentación</span><small id="foodSummary">Habitual</small></summary>
           <div class="compact-section-body">
+            <div id="dayFoodEvents" class="day-event-summary" hidden></div>
             <label class="switch-row compact-switch"><input id="usualFood" type="checkbox" checked><span>Alimentación habitual</span></label>
             <div id="foodException" class="conditional hidden">
               <p class="muted">Puedes seleccionar varios cambios.</p>
@@ -251,19 +254,43 @@
 </section>
 
 <section id="episodes" class="screen">
-  <div class="page-title"><h2>Episodios</h2></div>
+  <div class="page-title"><h2>Episodios y anotaciones</h2></div>
+  <div class="event-kinds" role="group" aria-label="Qué quieres registrar">
+    <button type="button" class="secondary-button" data-event-kind="episode" aria-pressed="true">Síntoma</button>
+    <button type="button" class="secondary-button" data-event-kind="bowel" aria-pressed="false">Deposición</button>
+    <button type="button" class="secondary-button" data-event-kind="context" aria-pressed="false">Contexto</button>
+    <button type="button" class="secondary-button" data-event-kind="food" aria-pressed="false">Alimentación</button>
+  </div>
   <form id="episodeForm" class="card form-card">
     <h3 id="episodeFormTitle">Registrar episodio</h3>
-    <div class="grid two">
+    <div id="episodeSymptoms" class="grid two">
       <label>Tipo<select id="episodeType">
         <option value="">Seleccionar</option><option value="chest">Torácico</option>
         <option value="respiratory">Respiratorio</option><option value="digestive">Digestivo</option>
         <option value="musculoskeletal">Musculoesquelético</option><option value="other">Otro</option>
       </select></label>
       <label>Síntoma o descripción<input id="episodeSymptom" placeholder="Ej. pinchazo en el tórax"></label>
-      <label>Fecha de inicio<input id="episodeDate" type="date" required></label>
-      <label>Hora de inicio<input id="episodeTime" type="time"></label>
     </div>
+    <div id="quickBowel" class="event-fields" hidden>
+      <label>Tipo de Bristol<select id="eventBristol"></select></label>
+      <div class="marker-row">
+        <label class="tick-card"><input id="eventBowelUrgency" type="checkbox"><span>Urgencia</span></label>
+        <label class="tick-card"><input id="eventBowelPain" type="checkbox"><span>Dolor</span></label>
+        <label class="tick-card"><input id="eventBowelBlood" type="checkbox"><span>Sangre visible</span></label>
+      </div>
+    </div>
+    <div id="quickContext" class="event-fields" hidden>
+      <label>Contexto<select id="eventContext"></select></label>
+    </div>
+    <div id="quickFood" class="event-fields" hidden>
+      <label>¿Qué comiste o bebiste?<input id="eventFood" placeholder="Ej. un trozo de panettone"></label>
+      <label>Tipo de cambio<select id="eventFoodType"></select></label>
+    </div>
+    <div class="grid two event-when">
+      <label><span id="eventDateLabel">Fecha de inicio</span><input id="episodeDate" type="date" required></label>
+      <label><span id="eventTimeLabel">Hora de inicio</span><input id="episodeTime" type="time"></label>
+    </div>
+    <label id="eventNotesLabel" hidden>Observaciones (opcional)<textarea id="eventNotes" rows="2"></textarea></label>
     <details id="episodeDetails" class="compact-section">
       <summary><span>Duración, contexto y evolución</span></summary>
       <div class="compact-section-body">
@@ -282,7 +309,7 @@
     </details>
     <div class="button-row">
       <button type="button" class="secondary-button hidden" id="cancelEpisode">Cancelar edición</button>
-      <button type="submit" class="primary">Guardar episodio</button>
+      <button type="submit" class="primary" id="saveEpisode">Guardar episodio</button>
     </div>
   </form>
   <div id="episodeList" class="training-list"></div>
@@ -309,5 +336,5 @@
 <div id="textEditorBackdrop" class="text-editor-backdrop" aria-hidden="true"><div class="text-editor-panel"><div class="text-editor-head"><h3 id="textEditorTitle">Editar observaciones</h3><button id="textEditorClose" type="button" class="secondary-button">Cerrar</button></div><textarea id="textEditorArea" rows="12"></textarea><div class="text-editor-actions"><button id="textEditorCancel" type="button" class="secondary-button">Cancelar</button><button id="textEditorApply" type="button" class="primary">Aplicar</button></div></div></div>
 <div id="scaleInfoBackdrop" class="scale-info-backdrop" aria-hidden="true"><div class="scale-info-panel"><div class="text-editor-head"><h3 id="scaleInfoTitle">Guía de escala</h3><button id="scaleInfoClose" type="button" class="secondary-button">Cerrar</button></div><div id="scaleInfoBody" class="scale-info-body"></div></div></div>
 <div id="modalBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle"></h3><div id="modalBody" class="modal-grid"></div><div class="modal-actions"><button id="modalCancel" class="secondary-button">Cancelar</button><button id="modalSave" class="small-button">Guardar</button></div></div></div>
-<script src="app.js?v=1.3.1"></script>
+<script src="app.js?v=1.3.2"></script>
 </body></html>
