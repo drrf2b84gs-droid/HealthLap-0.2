@@ -1,6 +1,6 @@
-const CACHE='healthlab-beta-1-3-2';
+const CACHE='healthlab-beta-1-3-3';
 const FILES=[
- './','./index.html?v=1.2.1','./styles.css?v=1.3.2','./app.js?v=1.3.2',
+ './','./index.html?v=1.3.3','./styles.css?v=1.3.3','./app.js?v=1.3.3',
  './manifest.json','./icon-1024.png','./icon-512.png','./icon-192.png',
  './apple-touch-icon.png','./apple-touch-icon-120.png','./favicon-32.png'
 ];
@@ -34,7 +34,7 @@ self.addEventListener('fetch',event=>{
    const cached=await cache.match(request);
    if(cached)return cached;
    if(request.mode==='navigate'){
-    const page=await cache.match('./index.html?v=1.2.1');
+    const page=await cache.match('./index.html?v=1.3.3');
     if(page)return page;
    }
    return Response.error();

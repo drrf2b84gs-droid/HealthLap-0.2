@@ -160,6 +160,11 @@ input:focus,textarea:focus,select:focus{scroll-margin-top:calc(env(safe-area-ins
 @supports(padding:max(0px)){body::before{content:"";position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:9;pointer-events:none}}
 .quick-actions{margin-top:16px}
 .quick-actions button{flex:1}
+.record-hub-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.record-hub-card{appearance:none;border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--text);padding:20px;text-align:left;box-shadow:0 6px 20px #17343a0a;display:grid;gap:7px;min-height:150px;align-content:start;font:inherit}
+.record-hub-card>span{font-size:28px;line-height:1}.record-hub-card>strong{font-size:18px}.record-hub-card>small{color:var(--muted);font-size:14px;line-height:1.35}
+.record-hub-card:active{transform:scale(.985)}
+#routineCards{display:grid;gap:14px}
 .wake-notes,.hrv-grid{margin-top:12px}
 #trainingForm .training-list,#trainingForm>.button-row{margin-top:12px}
 #trainingForm button[type=submit],#episodeForm button[type=submit]{background:var(--teal);color:white}
@@ -179,4 +184,5 @@ input:focus,textarea:focus,select:focus{scroll-margin-top:calc(env(safe-area-ins
 .day-event-summary ul,.quick-events-list{margin:6px 0;padding-left:20px}
 @media(max-width:620px){
  input:not([type=checkbox]):not([type=range]),select,textarea{font-size:16px}
+ .record-hub-grid{grid-template-columns:1fr}.record-hub-card{min-height:0}
 }
