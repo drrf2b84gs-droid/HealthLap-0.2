@@ -14,7 +14,7 @@
 <body>
 <header class="topbar">
   <img src="icon-192.png" class="brand-logo" alt="HealthLab">
-  <div><p class="eyebrow">HEALTHLAB · BETA 1.3.3</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
+  <div><p class="eyebrow">HEALTHLAB · BETA 1.3.4</p><h1 id="greeting">Buenos días, Luis</h1><p id="todayText" class="muted-light"></p></div>
   <button id="themeToggle" class="icon-button" aria-label="Cambiar apariencia">◐</button>
 </header>
 <main>
@@ -23,6 +23,7 @@
   <div class="metric-grid"><article class="metric-card"><span>Inflamación</span><strong>0</strong><small>Hoy</small></article><article class="metric-card amber"><span>Cansancio</span><strong>0</strong><small>Al despertar</small></article></div>
   <div class="button-row quick-actions">
     <button type="button" class="secondary-button" data-go="training">＋ Entrenamiento</button>
+    <button type="button" class="secondary-button" data-go="nutrition">＋ Alimentación</button>
     <button type="button" class="secondary-button" data-go="episodes">＋ Anotar ahora</button>
   </div>
 </section>
@@ -31,9 +32,9 @@
   <div class="page-title"><div><span class="kicker">REGISTRAR</span><h2>¿Qué quieres añadir?</h2></div></div>
   <div class="record-hub-grid">
     <button type="button" class="record-hub-card" data-go="record"><span>🌅</span><strong>Al despertar</strong><small>Sueño, recuperación y síntomas de esta mañana</small></button>
-    <button type="button" class="record-hub-card" data-go="episodes"><span>＋</span><strong>Anotar ahora</strong><small>Síntoma, deposición, contexto o alimentación</small></button>
+    <button type="button" class="record-hub-card" data-go="nutrition"><span>🍽️</span><strong>Alimentación</strong><small>Comidas, macros y recuperación deportiva</small></button>
     <button type="button" class="record-hub-card" data-go="training"><span>🏃</span><strong>Entrenamiento</strong><small>Sesión, carga, métricas y sensaciones</small></button>
-    <button type="button" class="record-hub-card" data-go="routine"><span>💊</span><strong>Rutina del día</strong><small>Suplementación, nutrición deportiva y medicación</small></button>
+    <button type="button" class="record-hub-card" data-go="episodes"><span>＋</span><strong>Anotar ahora</strong><small>Síntoma, deposición, contexto o medicación</small></button>
   </div>
 </section>
 
@@ -219,42 +220,39 @@
       </div>
     </article>
 
-    <article id="historicalTrainingBlock" class="card form-card hidden">
-      <div class="section-title"><h3>Entrenamientos de este registro</h3></div>
-      <div id="trainingList" class="training-list"><div class="empty-config">Sin entrenamiento registrado.</div></div>
-    </article>
-
-
-
-
-
-    <article class="card form-card" data-routine-card>
-      <div class="section-title"><div><span class="kicker">💊 RUTINA</span><h3>Suplementación diaria</h3></div></div>
+    <article class="card form-card">
+      <div class="section-title"><div><span class="kicker">💊 NOCHE ANTERIOR</span><h3>Suplementación habitual</h3></div></div>
+      <p class="muted">Marca lo que tomaste antes de dormir.</p>
       <div id="dailySupplements" class="check-list"></div>
     </article>
-
-    <article class="card form-card" data-routine-card>
-      <div class="section-title"><div><span class="kicker">🥤 DEPORTE</span><h3>Nutrición y suplementación deportiva</h3></div></div>
-      <div id="sportSupplements" class="check-list"></div>
-    </article>
-
-    <article class="card form-card" data-routine-card>
-      <div class="section-title"><div><span class="kicker">💉 TRATAMIENTO</span><h3>Medicación</h3></div></div>
-      <div id="medications" class="check-list"></div>
-    </article>
-
-    <article class="card form-card" data-routine-card><label>📝 Observaciones generales<div class="voice-field"><textarea id="notes" class="auto-grow" rows="4" placeholder="Solo si hay algo relevante"></textarea><div class="field-actions"><button type="button" class="voice-button" data-voice-target="notes">🎙️ Dictar</button><button type="button" class="expand-button" data-expand-target="notes">⛶ Ampliar</button></div></div></label></article>
     <button type="submit" class="primary save-button">Guardar datos al despertar</button>
   </form>
 </section>
 
-<section id="routine" class="screen">
-  <div class="page-title"><div><span class="kicker">RUTINA DEL DÍA</span><h2>Suplementos y medicación</h2></div></div>
-  <form id="routineForm">
-    <article class="card form-card"><label>Fecha<input id="routineDate" type="date" required></label></article>
-    <div id="routineCards"></div>
-    <button type="submit" class="primary save-button">Guardar rutina del día</button>
+<section id="nutrition" class="screen">
+  <div class="page-title"><div><span class="kicker">ALIMENTACIÓN</span><h2>Registrar comida</h2></div></div>
+  <article class="card nutrition-dashboard">
+    <div class="section-title split"><div><span class="kicker">HOY</span><h3>Balance orientativo</h3></div><button type="button" class="small-button" id="nutritionRefresh">Actualizar</button></div>
+    <div id="nutritionProgress" class="nutrition-progress"></div>
+    <div id="recoveryAdvice" class="recovery-advice"></div>
+  </article>
+  <article class="card"><div class="section-title"><div><span class="kicker">PLATOS HABITUALES</span><h3>Registrar con un toque</h3></div></div><div id="mealTemplates" class="template-list"></div></article>
+  <form id="mealForm" class="card form-card">
+    <h3 id="mealFormTitle">Nueva comida</h3>
+    <div class="grid two">
+      <label>Momento<select id="mealType"><option>Desayuno</option><option>Media mañana</option><option>Comida</option><option>Merienda</option><option>Cena</option><option>Antes de entrenar</option><option>Durante el entrenamiento</option><option>Después de entrenar</option><option>Otro</option></select></label>
+      <label>Fecha<input id="mealDate" type="date" required></label>
+      <label>Hora<input id="mealTime" type="time"></label>
+    </div>
+    <div class="section-title split meal-items-title"><h3>Alimentos</h3><button type="button" class="small-button" id="addMealItem">Añadir alimento</button></div>
+    <div id="mealItems" class="meal-items"></div>
+    <article class="nutrition-total"><span>Estimación de esta comida</span><strong id="mealCalories">≈ 0 kcal</strong><small id="mealMacros">Proteína 0 g · Hidratos 0 g · Grasas 0 g</small><small>Valores orientativos; corrige la cantidad cuando la conozcas.</small></article>
+    <label>Observaciones<textarea id="mealNotes" rows="2" placeholder="Preparación, restaurante, sensación digestiva..."></textarea></label>
+    <label class="switch-row compact-switch"><input id="saveMealTemplate" type="checkbox"><span>Guardar esta combinación como plato habitual</span></label>
+    <div id="mealTemplateNameWrap" class="conditional hidden"><label>Nombre del plato<input id="mealTemplateName" placeholder="Ej. Desayuno del trabajo"></label></div>
+    <div class="button-row"><button type="button" class="secondary-button hidden" id="cancelMealEdit">Cancelar edición</button><button type="submit" class="primary">Guardar comida</button></div>
   </form>
+  <div id="todayMeals"></div>
 </section>
 
 <section id="training" class="screen">
@@ -278,7 +276,7 @@
     <button type="button" class="secondary-button" data-event-kind="episode" aria-pressed="true">Síntoma</button>
     <button type="button" class="secondary-button" data-event-kind="bowel" aria-pressed="false">Deposición</button>
     <button type="button" class="secondary-button" data-event-kind="context" aria-pressed="false">Contexto</button>
-    <button type="button" class="secondary-button" data-event-kind="food" aria-pressed="false">Alimentación</button>
+    <button type="button" class="secondary-button" data-event-kind="medication" aria-pressed="false">Medicación</button>
   </div>
   <form id="episodeForm" class="card form-card">
     <h3 id="episodeFormTitle">Registrar episodio</h3>
@@ -301,9 +299,9 @@
     <div id="quickContext" class="event-fields" hidden>
       <label>Contexto<select id="eventContext"></select></label>
     </div>
-    <div id="quickFood" class="event-fields" hidden>
-      <label>¿Qué comiste o bebiste?<input id="eventFood" placeholder="Ej. un trozo de panettone"></label>
-      <label>Tipo de cambio<select id="eventFoodType"></select></label>
+    <div id="quickMedication" class="event-fields" hidden>
+      <label>Medicación<select id="eventMedication"></select></label>
+      <div class="grid two"><label>Cantidad<input id="eventMedicationAmount" type="number" min="0" step="0.1" inputmode="decimal"></label><label>Unidad<input id="eventMedicationUnit" placeholder="Ej. comprimido"></label></div>
     </div>
     <div class="grid two event-when">
       <label><span id="eventDateLabel">Fecha de inicio</span><input id="episodeDate" type="date" required></label>
@@ -331,7 +329,6 @@
       <button type="submit" class="primary" id="saveEpisode">Guardar episodio</button>
     </div>
   </form>
-  <div id="episodeList" class="training-list"></div>
 </section>
 
 <section id="calendar" class="screen">
@@ -355,5 +352,5 @@
 <div id="textEditorBackdrop" class="text-editor-backdrop" aria-hidden="true"><div class="text-editor-panel"><div class="text-editor-head"><h3 id="textEditorTitle">Editar observaciones</h3><button id="textEditorClose" type="button" class="secondary-button">Cerrar</button></div><textarea id="textEditorArea" rows="12"></textarea><div class="text-editor-actions"><button id="textEditorCancel" type="button" class="secondary-button">Cancelar</button><button id="textEditorApply" type="button" class="primary">Aplicar</button></div></div></div>
 <div id="scaleInfoBackdrop" class="scale-info-backdrop" aria-hidden="true"><div class="scale-info-panel"><div class="text-editor-head"><h3 id="scaleInfoTitle">Guía de escala</h3><button id="scaleInfoClose" type="button" class="secondary-button">Cerrar</button></div><div id="scaleInfoBody" class="scale-info-body"></div></div></div>
 <div id="modalBackdrop" class="modal-backdrop"><div class="modal"><h3 id="modalTitle"></h3><div id="modalBody" class="modal-grid"></div><div class="modal-actions"><button id="modalCancel" class="secondary-button">Cancelar</button><button id="modalSave" class="small-button">Guardar</button></div></div></div>
-<script src="app.js?v=1.3.3"></script>
+<script src="app.js?v=1.3.4"></script>
 </body></html>

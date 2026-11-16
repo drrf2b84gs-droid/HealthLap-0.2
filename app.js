@@ -1,5 +1,5 @@
-const APP_VERSION='1.3.3';
-const CURRENT_SCHEMA_VERSION=17;
+const APP_VERSION='1.3.4';
+const CURRENT_SCHEMA_VERSION=18;
 const EXPORT_FORMAT_VERSION=4;
 const EXPORT_FORMAT='healthlab-json';
 const STORAGE_KEY='healthLabData';
@@ -39,8 +39,32 @@ const defaults={
  sportSupplements:[
   {id:'protein',name:'Proteína',dose:25,unit:'g',composition:'Whey isolate',enabled:true,order:1,defaultTaken:true},
   {id:'creatine',name:'Creatina',dose:5,unit:'g',composition:'Monohidrato',enabled:true,order:2,defaultTaken:true}],
- medications:[]
+ medications:[],
+ nutritionSettings:{weightKg:79,baseCalories:2400,proteinTargetG:130,baseCarbsG:250,fatTargetG:80},
+ mealTemplates:[{id:'work-breakfast',name:'Desayuno del trabajo',mealType:'Desayuno',items:[
+  {foodId:'chicken-breast',quantity:1.8},{foodId:'fried-egg',quantity:2},
+  {foodId:'fries-handful',quantity:1},{foodId:'baguette-slice',quantity:3.5}
+ ]}]
 };
+const foodCatalog=[
+ {id:'chicken-breast',name:'Pechuga de pollo a la plancha',portion:'100 g',kcal:165,protein:31,carbs:0,fat:3.6},
+ {id:'fried-egg',name:'Huevo frito o a la plancha',portion:'1 unidad',kcal:90,protein:6.3,carbs:.4,fat:7},
+ {id:'fries-handful',name:'Patatas fritas · puñado',portion:'1 puñado ≈ 80 g',kcal:240,protein:3,carbs:32,fat:12},
+ {id:'baguette-slice',name:'Pan de barra · rebanada',portion:'1 rebanada ≈ 25 g',kcal:68,protein:2.2,carbs:14,fat:.4},
+ {id:'rice-cooked',name:'Arroz cocido',portion:'100 g',kcal:130,protein:2.7,carbs:28,fat:.3},
+ {id:'pasta-cooked',name:'Pasta cocida',portion:'100 g',kcal:158,protein:5.8,carbs:31,fat:.9},
+ {id:'potato-cooked',name:'Patata cocida o asada',portion:'100 g',kcal:90,protein:2,carbs:20,fat:.1},
+ {id:'olive-oil',name:'Aceite de oliva',portion:'1 cucharada',kcal:119,protein:0,carbs:0,fat:13.5},
+ {id:'greek-yogurt',name:'Yogur griego natural',portion:'1 unidad ≈ 125 g',kcal:130,protein:5,carbs:5,fat:10},
+ {id:'banana',name:'Plátano',portion:'1 unidad mediana',kcal:105,protein:1.3,carbs:27,fat:.4},
+ {id:'oats',name:'Avena',portion:'40 g',kcal:152,protein:5.1,carbs:24.8,fat:2.8},
+ {id:'nuts-handful',name:'Frutos secos · puñado',portion:'1 puñado ≈ 30 g',kcal:185,protein:5.5,carbs:5,fat:17},
+ {id:'peanut-butter',name:'Crema de cacahuete',portion:'1 cucharada ≈ 15 g',kcal:90,protein:3.8,carbs:3,fat:7.5},
+ {id:'milk-glass',name:'Leche · vaso',portion:'250 ml',kcal:150,protein:8,carbs:12,fat:8},
+ {id:'whey-scoop',name:'Proteína whey',portion:'1 dosis ≈ 30 g',kcal:115,protein:24,carbs:2,fat:1.5},
+ {id:'creatine-dose',name:'Creatina',portion:'1 dosis ≈ 5 g',kcal:0,protein:0,carbs:0,fat:0},
+ {id:'custom',name:'Otro alimento · macros manuales',portion:'cantidad indicada',kcal:0,protein:0,carbs:0,fat:0}
+];
 const hiddenSportItems=new Set(['caffeine','carbsPre','carbsDuring','carbsPost']);
 const respiratoryGroups=[
  ['Nariz y senos paranasales',[
@@ -144,7 +168,13 @@ function migrate16To17(d){
  }
  return d;
 }
-const migrations={9:migrate9To10,10:migrate10To11,11:migrate11To12,12:migrate12To13,13:migrate13To14,14:migrate14To15,15:migrate15To16,16:migrate16To17};
+function migrate17To18(d){
+ d.schemaVersion=18;
+ if(!d.nutritionSettings)d.nutritionSettings=clone(defaults.nutritionSettings);
+ if(!Array.isArray(d.mealTemplates)||!d.mealTemplates.length)d.mealTemplates=clone(defaults.mealTemplates);
+ return d;
+}
+const migrations={9:migrate9To10,10:migrate10To11,11:migrate11To12,12:migrate12To13,13:migrate13To14,14:migrate14To15,15:migrate15To16,16:migrate16To17,17:migrate17To18};
 function migrate(d){
  d=d||{};d.entries=Array.isArray(d.entries)?d.entries:[];d.events=Array.isArray(d.events)?d.events:[];d.trainings=Array.isArray(d.trainings)?d.trainings:[];
  let version=Number(d.schemaVersion||9);if(version>CURRENT_SCHEMA_VERSION)throw new Error(`Este archivo usa el esquema ${version}, más nuevo que el compatible (${CURRENT_SCHEMA_VERSION}).`);
@@ -155,6 +185,8 @@ function migrate(d){
  d.trainingTypes.sort((a,b)=>(Number(a.order)||999)-(Number(b.order)||999)||String(a.name).localeCompare(String(b.name))).forEach((x,i)=>x.order=i+1);
  d.dailySupplements=Array.isArray(d.dailySupplements)&&d.dailySupplements.length?d.dailySupplements:clone(defaults.dailySupplements);
  d.sportSupplements=Array.isArray(d.sportSupplements)&&d.sportSupplements.length?d.sportSupplements:clone(defaults.sportSupplements);d.medications=Array.isArray(d.medications)?d.medications:[];
+ d.nutritionSettings={...clone(defaults.nutritionSettings),...(d.nutritionSettings||{})};
+ d.mealTemplates=Array.isArray(d.mealTemplates)&&d.mealTemplates.length?d.mealTemplates:clone(defaults.mealTemplates);
  d.dailySupplements=d.dailySupplements.filter(x=>x.id!=='coq10');
  for(const x of d.dailySupplements){if(x.defaultTaken===undefined)x.defaultTaken=['multi','omega3','magnesium'].includes(x.id)}
  for(const x of d.sportSupplements)if(x.defaultTaken===undefined)x.defaultTaken=['protein','creatine'].includes(x.id);
@@ -329,8 +361,7 @@ function bindSmartNumericTimeFields(root=document){root.querySelectorAll('.smart
  el.inputMode=el.step==='any'||el.step.includes('.')?'decimal':'numeric';
  });
  root.querySelectorAll('input,textarea,select').forEach(el=>{if(el.dataset.iosFocusBound)return;el.dataset.iosFocusBound='1';el.addEventListener('focus',()=>{if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))setTimeout(()=>el.scrollIntoView({block:'center',behavior:'smooth'}),180)})})}
-function go(screen){stopActiveDictation();closeTextEditor(false);document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));const registerScreens=new Set(['recordHub','record','routine','training','episodes']);document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.go===screen||(x.dataset.go==='recordHub'&&registerScreens.has(screen))));$(screen).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});if(screen==='record')prepareNewRecord();if(screen==='routine')prepareRoutine();if(screen==='home')updateHome();if(screen==='calendar')renderCalendar();if(screen==='training')prepareTraining();if(screen==='episodes')prepareEpisodes();if(screen==='stats')renderStats();if(screen==='settings')renderSettings()}
-document.querySelectorAll('[data-routine-card]').forEach(card=>$('routineCards').append(card));
+function go(screen){stopActiveDictation();closeTextEditor(false);document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));const registerScreens=new Set(['recordHub','record','nutrition','training','episodes']);document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.go===screen||(x.dataset.go==='recordHub'&&registerScreens.has(screen))));$(screen).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});if(screen==='record')prepareNewRecord();if(screen==='nutrition')prepareNutrition();if(screen==='home')updateHome();if(screen==='calendar')renderCalendar();if(screen==='training')prepareTraining();if(screen==='episodes')prepareEpisodes();if(screen==='stats')renderStats();if(screen==='settings')renderSettings()}
 document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
 $('todayText').textContent=new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long'}).format(new Date());
 try{document.documentElement.dataset.theme=localStorage.getItem(THEME_KEY)||'light'}catch{document.documentElement.dataset.theme='light'}
@@ -459,10 +490,6 @@ function renderTrainingCards(list,drafts,{standalone=false}={}){
  bindExpandableTextareas(list);
  bindSmartNumericTimeFields(list);
 }
-function renderTrainingList(){
- $('historicalTrainingBlock').classList.toggle('hidden',trainingDrafts.length===0);
- renderTrainingCards($('trainingList'),trainingDrafts);
-}
 function makeTrainingDraft(training){
  return {...newTraining(),...training,
   bikeMode:training.bikeMode||((training.distanceKm||training.avgPower||training.avgCadence)?'outdoor':'indoor'),
@@ -579,9 +606,9 @@ const eventKinds={
  episode:{name:'episodio',panel:'episodeSymptoms'},
  bowel:{name:'deposición',panel:'quickBowel'},
  context:{name:'contexto',panel:'quickContext'},
- food:{name:'alimentación',panel:'quickFood'}
+ medication:{name:'medicación',panel:'quickMedication'}
 };
-const isTimelineEvent=event=>Object.hasOwn(eventKinds,event.kind);
+const isTimelineEvent=event=>['episode','bowel','context','medication','food'].includes(event.kind);
 const episodeInputs={
  type:'episodeType',symptom:'episodeSymptom',date:'episodeDate',time:'episodeTime',
  duration:'episodeDuration',intensity:'episodeIntensity',location:'episodeLocation',side:'episodeSide',
@@ -591,7 +618,7 @@ const episodeInputs={
 const quickEventInputs={
  bowel:{bristolType:'eventBristol',urgency:'eventBowelUrgency',pain:'eventBowelPain',blood:'eventBowelBlood'},
  context:{contextType:'eventContext'},
- food:{food:'eventFood',foodType:'eventFoodType'}
+ medication:{medicationId:'eventMedication',amount:'eventMedicationAmount',unit:'eventMedicationUnit'}
 };
 const eventKindButtons=[...document.querySelectorAll('[data-event-kind]')];
 
@@ -604,10 +631,8 @@ addEventSelectOptions('eventBristol',[...$('bristolType').options].filter(option
  .map(option=>[option.value,option.text]),'Sin indicar');
 addEventSelectOptions('eventContext',[...document.querySelectorAll('[name=dayContext]')]
  .map(field=>[field.value,field.nextElementSibling.textContent]),'Seleccionar contexto');
-addEventSelectOptions('eventFoodType',[
- ['Alimento especial','Alimento especial'],['Capricho','Capricho o comida poco saludable'],
- ...[...document.querySelectorAll('[name=foodChange]')].map(field=>[field.value,field.nextElementSibling.textContent])
-],'Sin indicar');
+function renderMedicationOptions(){const select=$('eventMedication');select.innerHTML='<option value="">Seleccionar medicación</option>'+data.medications.filter(item=>item.enabled!==false).map(item=>`<option value="${esc(item.id)}">${esc(item.name)}</option>`).join('')}
+$('eventMedication').onchange=()=>{const item=data.medications.find(value=>value.id===$('eventMedication').value);if(item){$('eventMedicationAmount').value=item.dose??'';$('eventMedicationUnit').value=item.unit||''}};
 
 function selectEventKind(kind){
  activeEventKind=kind;
@@ -621,10 +646,10 @@ function selectEventKind(kind){
  $('episodeDetails').hidden=!clinical;
  $('eventNotesLabel').hidden=clinical;
  $('episodeFormTitle').textContent=editingEpisodeId?'Modificar '+name:({
-  episode:'Registrar episodio',bowel:'Registrar deposición',context:'Anotar contexto',food:'Anotar comida o bebida'
+  episode:'Registrar episodio',bowel:'Registrar deposición',context:'Anotar contexto',medication:'Anotar medicación'
  })[kind];
  $('saveEpisode').textContent=editingEpisodeId?'Guardar cambios':({
-  episode:'Guardar episodio',bowel:'Guardar deposición',context:'Guardar contexto',food:'Guardar alimento'
+  episode:'Guardar episodio',bowel:'Guardar deposición',context:'Guardar contexto',medication:'Guardar medicación'
  })[kind];
  $('eventDateLabel').textContent=clinical?'Fecha de inicio':'Fecha';
  $('eventTimeLabel').textContent=clinical?'Hora de inicio':'Hora';
@@ -638,6 +663,7 @@ function episodeTrainingOptions(){
  return [...data.trainings,...historical].sort((a,b)=>b.date.localeCompare(a.date));
 }
 function prepareEpisodes(){
+ renderMedicationOptions();
  const select=$('episodeTraining');
  const selected=select.value;
  select.innerHTML='<option value="">Sin vincular</option>'+episodeTrainingOptions().map(training=>
@@ -647,7 +673,6 @@ function prepareEpisodes(){
  }
  select.value=selected;
  if(!editingEpisodeId&&!episodeDraftChanged)resetEpisodeForm();
- renderEpisodeList();
 }
 function resetEpisodeForm(){
  const now=new Date();
@@ -661,6 +686,7 @@ function resetEpisodeForm(){
  selectEventKind('episode');
 }
 function openEpisode(episode){
+ if(episode.kind==='food'){openMeal(episode);return}
  go('episodes');
  resetEpisodeForm();
  editingEpisodeId=episode.uuid;
@@ -692,14 +718,19 @@ function quickEventDetails(event){
   event.urgency?'Urgencia':'',event.pain?'Dolor':'',event.blood?'Sangre visible':''
  ].filter(Boolean);
  if(event.kind==='context')return [eventOptionText('eventContext',event.contextType)].filter(Boolean);
- return [event.food,event.foodType?eventOptionText('eventFoodType',event.foodType):''].filter(Boolean);
+ if(event.kind==='medication'){
+  const medication=data.medications.find(item=>item.id===event.medicationId);
+  return [medication?.name||event.medicationName||'Medicación',event.amount==null?'':`${event.amount} ${event.unit||''}`].filter(Boolean);
+ }
+ if(event.items?.length)return [event.mealType,`${Math.round(event.totals?.kcal||0)} kcal`,event.items.map(item=>item.name).join(', ')].filter(Boolean);
+ return [event.food,event.foodType||''].filter(Boolean);
 }
 function episodeSummary(episode){
  const linked=episode.trainingId?episodeTrainingOptions().find(training=>training.uuid===episode.trainingId):null;
  const clinical=episode.kind==='episode';
  const title=clinical
   ?[episodeTypes[episode.type]||'Episodio',episode.symptom].filter(Boolean).join(' · ')
-  :{bowel:'Deposición',context:'Contexto',food:'Alimentación'}[episode.kind];
+  :{bowel:'Deposición',context:'Contexto',medication:'Medicación',food:episode.mealType||'Alimentación'}[episode.kind];
  const details=clinical?[
   episode.location,episode.side,episode.duration,episode.intensity==null?'':`${episode.intensity}/10`,
   episode.context,episode.endDate?`Fin: ${episode.endDate} ${episode.endTime||''}`:'',
@@ -711,11 +742,6 @@ function episodeSummary(episode){
  ${episode.notes?`<p class="episode-notes">${esc(episode.notes)}</p>`:''}
  <div class="button-row"><button type="button" class="secondary-button" data-edit-episode="${esc(episode.uuid)}">Editar</button>
  <button type="button" class="danger" data-delete-episode="${esc(episode.uuid)}">Eliminar</button></div></article>`;
-}
-function renderEpisodeList(){
- const episodes=data.events.filter(isTimelineEvent).sort((a,b)=>
-  (b.date+(b.time||'')).localeCompare(a.date+(a.time||'')));
- $('episodeList').innerHTML=episodes.map(episodeSummary).join('');
 }
 $('cancelEpisode').onclick=resetEpisodeForm;
 $('episodeForm').onsubmit=async event=>{
@@ -739,7 +765,13 @@ $('episodeForm').onsubmit=async event=>{
   }
   if(kind==='bowel')fields.bristolType=nullableNumber(fields.bristolType);
   if(kind==='context'&&!fields.contextType&&!fields.notes)return alert('Elige un contexto o descríbelo en observaciones.');
-  if(kind==='food'&&!fields.food&&!fields.foodType&&!fields.notes)return alert('Indica qué comiste o selecciona un tipo de cambio.');
+  if(kind==='medication'){
+   fields.amount=nullableNumber(fields.amount);
+   const medication=data.medications.find(item=>item.id===fields.medicationId);
+   if(!fields.medicationId&&!fields.notes)return alert('Selecciona la medicación o descríbela en observaciones.');
+   fields.medicationName=medication?.name||'';
+   if(!fields.unit)fields.unit=medication?.unit||'';
+  }
  }
  const previous=data.events.find(item=>item.uuid===editingEpisodeId);
  const now=new Date().toISOString();
@@ -755,17 +787,7 @@ $('episodeForm').onsubmit=async event=>{
 function renderItemInputs(arr,id){$(id).innerHTML=arr.filter(x=>x.enabled!==false).sort((a,b)=>(a.order||0)-(b.order||0)).map(x=>`<div class="supp-entry"><label class="switch-row"><input type="checkbox" data-item-check="${x.id}" data-group="${id}" ${x.defaultTaken?'checked':''}><span><strong>${esc(x.name)}</strong><small>${esc(x.composition||'')}</small></span></label><div class="supp-dose"><input type="number" min="0" step="0.1" value="${x.dose??0}" data-item-dose="${x.id}" data-group="${id}"><span>${esc(x.unit||'')}</span></div></div>`).join('')||'<div class="empty-config">Sin elementos configurados.</div>'}
 function renderRecordItems(){
  renderItemInputs(data.dailySupplements,'dailySupplements');
- renderItemInputs(data.sportSupplements.filter(item=>!hiddenSportItems.has(item.id)),'sportSupplements');
- renderItemInputs(data.medications,'medications');
- const protein=document.querySelector('[data-item-check="protein"][data-group="sportSupplements"]');
- const creatine=document.querySelector('[data-item-check="creatine"][data-group="sportSupplements"]');
- const config=data.sportSupplements.find(item=>item.id==='creatine');
- if(protein&&creatine&&config?.defaultTaken){
-  creatine.checked=protein.checked;
-  protein.onchange=()=>creatine.checked=protein.checked;
- }
  bindSmartNumericTimeFields($('quickForm'));
- bindSmartNumericTimeFields($('routineForm'));
 }
 function isLegacyCompositionIncomplete(v){const x=String(v??'').trim().toLowerCase().replace(/\s+/g,' ');return !x||['epa/dha','vitaminas y minerales','según pauta',''].includes(x)}
 function stableProductVersionId(x={}){const id=String(x.supplementId||x.id||'supplement');const current=String(x.productVersionId||'');return current.includes('-product-')?current:`${id}-product-001`}
@@ -776,22 +798,8 @@ function prepareNewRecord(){
  if(editingDate||recordSaveFailed)return;
  $('entryDate').value=localISO();
  renderRecordItems();
- renderTrainingList();
  updateTemporalLabels();
 }
-function prepareRoutine(date=localISO()){
- $('routineDate').value=date;
- renderRecordItems();
- const entry=data.entries.find(item=>item.date===date);
- if(entry){
-  restoreItemGroup('dailySupplements',entry.dailySupplements||[]);
-  restoreItemGroup('sportSupplements',entry.sportSupplements||[]);
-  restoreItemGroup('medications',entry.medicationsTaken||[]);
-  $('notes').value=entry.notes||'';
- }else $('notes').value='';
- bindExpandableTextareas($('routineForm'));
-}
-$('routineDate').onchange=()=>prepareRoutine($('routineDate').value||localISO());
 function resetForm(){
  editingDate=null;
  recordSaveFailed=false;
@@ -812,7 +820,7 @@ function resetForm(){
  $('handNotes').value='';handPhotoData=[];renderHandPhoto();toggleHandDetail(false);
  $('weightKg').value='';$('waistCm').value='';$('hipCm').value='';updateAnthropometryHints();$('appleRestingHeartRate').value='';$('appleHrvAverage').value='';$('appleHrvMin').value='';$('appleHrvMax').value='';
  $('bowelFrequency').value='0';$('bristolType').value='';$('bowelUrgency').checked=false;$('bowelPain').checked=false;$('bowelBlood').checked=false;$('bowelNotes').value='';toggleBowelDetail();updateCompactSummaries();
- trainingDrafts=[];renderTrainingList();renderRecordItems();bindExpandableTextareas();bindRanges();bindScaleInfo();updateTemporalLabels();
+ trainingDrafts=[];renderRecordItems();bindExpandableTextareas();bindRanges();bindScaleInfo();updateTemporalLabels();
 }
 function previousISO(date){const d=new Date(date+'T12:00:00');d.setDate(d.getDate()-1);return localISO(d)}
 function updateTemporalLabels(){
@@ -851,7 +859,7 @@ function closedDayEvents(date){
  return Object.keys(quickEventInputs).map(kind=>{
   const events=items.filter(item=>item.kind===kind);
   if(!events.length)return '';
-  const label={bowel:'Deposiciones anotadas',context:'Contextos anotados',food:'Comidas o bebidas anotadas'}[kind];
+  const label={bowel:'Deposiciones anotadas',context:'Contextos anotados',food:'Comidas o bebidas anotadas',medication:'Medicación anotada'}[kind];
   return `<p><b>${label} (${events.length})</b></p>${quickEventList(events)}`;
  }).join('');
 }
@@ -889,7 +897,7 @@ function normalizeSupplementConfig(list=[]){return list.map((x,i)=>({id:String(x
 function normalizeTakenSupplement(x={}){const snapshot=String(x.compositionSnapshot??x.composition??'');return {supplementId:String(x.supplementId||x.id||''),productVersionId:stableProductVersionId(x),name:String(x.name||''),amount:nullableNumber(x.amount),unit:String(x.unit||''),compositionSnapshot:snapshot,legacyIncomplete:x.legacyIncomplete===true||isLegacyCompositionIncomplete(snapshot)}}
 function normalizeTraining(t={}){const durationSeconds=nullableNumber(t.durationSeconds)??((nullableNumber(t.durationMinutes)??parseDuration(t.duration||'')??0)*60);const paceSecondsPerKm=nullableNumber(t.paceSecondsPerKm)??paceToSeconds(t.avgPace);return {uuid:t.uuid||makeUuid(),typeId:String(t.typeId||''),typeName:String(t.typeName||''),kind:String(t.kind||'other'),...(t.date?{date:t.date,time:t.time||null,createdAt:t.createdAt||null,updatedAt:t.updatedAt||null}:{}),poles:t.poles===true||t.poles==='yes'?true:(t.poles===false||t.poles==='no'?false:null),bikeMode:t.bikeMode||null,manualDescent:t.manualDescent??null,competition:!!t.competition,durationSeconds:Math.round(durationSeconds),temperature:t.temperature?String(t.temperature):null,notes:String(t.notes||''),terrain:t.terrain?String(t.terrain):null,distanceKm:nullableNumber(t.distanceKm),elevationGainM:nullableNumber(t.elevationGainM??t.elevGain),elevationLossM:nullableNumber(t.elevationLossM??t.elevLoss),paceSecondsPerKm,tss:nullableNumber(t.tss??t.tssValue),tssType:t.tssType?String(t.tssType):null,intensityFactor:nullableNumber(t.intensityFactor??t.ifValue),averagePowerW:(nullableNumber(t.averagePowerW??t.avgPower)===0?null:nullableNumber(t.averagePowerW??t.avgPower)),averageCadenceRpm:(nullableNumber(t.averageCadenceRpm??t.avgCadence)===0?null:nullableNumber(t.averageCadenceRpm??t.avgCadence)),averageHeartRateBpm:(nullableNumber(t.averageHeartRateBpm??t.avgHeartRate)===0?null:nullableNumber(t.averageHeartRateBpm??t.avgHeartRate)),rpeGlobal:nullableNumber(t.rpeGlobal),rpeLegs:nullableNumber(t.rpeLegs),rpeCardio:nullableNumber(t.rpeCardio),bodyArea:t.bodyArea?String(t.bodyArea):null}}
 function normalizeEntry(e={}){const hd=e.handDetails||{};const side=x=>({fingers:Array.isArray(x?.fingers)?x.fingers.map(String):[],joint:x?.joint?String(x.joint):null,mobilityLimited:!!x?.mobilityLimited});return {id:`entry-${e.date}`,uuid:e.uuid||makeUuid(),date:String(e.date||''),createdAt:e.createdAt||null,updatedAt:e.updatedAt||null,revision:Number(e.revision||1),wakeCompleted:e.wakeCompleted!==false,wakeOnly:!!e.wakeOnly,sleepQuality:nullableNumber(e.sleepQuality),sleepDurationMinutes:nullableNumber(e.sleepDurationMinutes)??nullableNumber(e.sleepMinutes)??parseDuration(e.sleepDuration||''),usualSchedule:e.usualSchedule!==false,sleepNotes:String(e.sleepNotes||''),fatigue:nullableNumber(e.fatigue),legFatigue:!!e.legFatigue,calfTension:!!e.calfTension,jawTension:!!e.jawTension,handSwelling:nullableNumber(e.handSwelling),handPain:nullableNumber(e.handPain),peeling:nullableNumber(e.peeling),abdominalInflammation:nullableNumber(e.abdominalInflammation)??0,paddedHands:e.paddedHands??null,wakeNotes:String(e.wakeNotes||''),weightKg:nullableNumber(e.weightKg),waistCm:nullableNumber(e.waistCm),hipCm:nullableNumber(e.hipCm),handDetails:{right:side(hd.right),left:side(hd.left),notes:String(hd.notes||''),photos:Array.isArray(hd.photos)?hd.photos:[]},appleRestingHeartRateBpm:nullableNumber(e.appleRestingHeartRateBpm??e.appleRestingHeartRate),appleHrvAverageMs:nullableNumber(e.appleHrvAverageMs??e.appleHrvAverage),appleHrvMinMs:nullableNumber(e.appleHrvMinMs),appleHrvMaxMs:nullableNumber(e.appleHrvMaxMs),hrv4TrainingScore:nullableNumber(e.hrv4TrainingScore),hrv4TrainingStatus:e.hrv4TrainingStatus?String(e.hrv4TrainingStatus):null,bowelFrequency:nullableNumber(e.bowelFrequency),bristolType:nullableNumber(e.bristolType),bowelUrgency:!!e.bowelUrgency,bowelPain:!!e.bowelPain,bowelBlood:!!e.bowelBlood,bowelNotes:String(e.bowelNotes||''),dayContexts:Array.isArray(e.dayContexts)?e.dayContexts.map(String):(e.dayContext?[String(e.dayContext)]:['routine']),customContext:String(e.customContext||''),stress:nullableNumber(e.stress),eyeTic:!!e.eyeTic,respiratorySymptoms:!!(e.respiratorySymptoms||e.hasRespiratorySymptoms),nasalCongestion:nullableNumber(e.nasalCongestion)??0,mucus:nullableNumber(e.mucus)??0,throatMucus:!!e.throatMucus,postNasalDrip:!!(e.postNasalDrip||e.nasalDrip),sneezing:!!e.sneezing,cough:!!e.cough,dailyBreathlessness:!!(e.dailyBreathlessness||e.shortnessOfBreath),respiratoryNotes:String(e.respiratoryNotes||''),respiratoryIntensity:nullableNumber(e.respiratoryIntensity),...Object.fromEntries(respiratoryFields.filter(([id])=>!['throatMucus','postNasalDrip','sneezing','cough','dailyBreathlessness'].includes(id)).map(([id])=>[id,e[id]??null])),usualFood:e.usualFood!==false,foodChanges:Array.isArray(e.foodChanges)?e.foodChanges.map(String):(e.foodChange?[String(e.foodChange)]:[]),foodNotes:String(e.foodNotes||''),trainings:(e.trainings||[]).map(normalizeTraining),dailySupplements:(e.dailySupplements||[]).map(normalizeTakenSupplement),sportSupplements:(e.sportSupplements||[]).map(normalizeTakenSupplement),medicationsTaken:(e.medicationsTaken||[]).map(normalizeTakenSupplement),notes:String(e.notes||''),aiAnalysis:e.aiAnalysis??null,source:e.source||{...SOURCE},history:Array.isArray(e.history)?e.history:[]}}
-function normalizedPayload(input){const d=clone(input);return {schemaVersion:CURRENT_SCHEMA_VERSION,profile:{name:String(d.profile?.name||'')},entries:(d.entries||[]).map(normalizeEntry).sort((a,b)=>a.date.localeCompare(b.date)),trainings:(d.trainings||[]).map(normalizeTraining).sort((a,b)=>a.date.localeCompare(b.date)),events:(d.events||[]).map(x=>({...x,uuid:x.uuid||makeUuid()})),trainingTypes:(d.trainingTypes||[]).slice().sort((a,b)=>(Number(a.order)||999)-(Number(b.order)||999)).map((x,i)=>({...x,order:i+1})),dailySupplements:normalizeSupplementConfig(d.dailySupplements||[]),sportSupplements:normalizeSupplementConfig(d.sportSupplements||[]),medications:normalizeSupplementConfig(d.medications||[]),processingLog:Array.isArray(d.processingLog)?d.processingLog:[]}}
+function normalizedPayload(input){const d=clone(input);return {schemaVersion:CURRENT_SCHEMA_VERSION,profile:{name:String(d.profile?.name||'')},entries:(d.entries||[]).map(normalizeEntry).sort((a,b)=>a.date.localeCompare(b.date)),trainings:(d.trainings||[]).map(normalizeTraining).sort((a,b)=>a.date.localeCompare(b.date)),events:(d.events||[]).map(x=>({...x,uuid:x.uuid||makeUuid()})),trainingTypes:(d.trainingTypes||[]).slice().sort((a,b)=>(Number(a.order)||999)-(Number(b.order)||999)).map((x,i)=>({...x,order:i+1})),dailySupplements:normalizeSupplementConfig(d.dailySupplements||[]),sportSupplements:normalizeSupplementConfig(d.sportSupplements||[]),medications:normalizeSupplementConfig(d.medications||[]),nutritionSettings:{...d.nutritionSettings},mealTemplates:clone(d.mealTemplates||[]),processingLog:Array.isArray(d.processingLog)?d.processingLog:[]}}
 function validateData(obj){
  const warnings=[],errors=[],uuids=new Set(),dates=new Set();
  function validateTraining(training,label){
@@ -955,7 +963,8 @@ function buildSummary(payload){
   totalEpisodes:(payload.events||[]).filter(item=>item.kind==='episode').length,
   totalBowelEvents:(payload.events||[]).filter(item=>item.kind==='bowel').length,
   totalContextEvents:(payload.events||[]).filter(item=>item.kind==='context').length,
-  totalFoodEvents:(payload.events||[]).filter(item=>item.kind==='food').length
+  totalFoodEvents:(payload.events||[]).filter(item=>item.kind==='food').length,
+  totalMedicationEvents:(payload.events||[]).filter(item=>item.kind==='medication').length
  };
 }
 function canonicalize(v){if(Array.isArray(v))return v.map(canonicalize);if(v&&typeof v==='object'){const o={};for(const k of Object.keys(v).sort())o[k]=canonicalize(v[k]);return o}return v}
@@ -968,21 +977,17 @@ $('quickForm').onsubmit=async event=>{
  if(sleepMinutes===null)return alert('Duración de sueño no válida. Ejemplos: 45 = 00:45 y 730 = 07:30.');
  const hrvMin=nullableNumber(getVal('appleHrvMin')),hrvMax=nullableNumber(getVal('appleHrvMax'));
  if(hrvMin!==null&&hrvMax!==null&&hrvMin>hrvMax)return alert('La HRV mínima debe ser igual o inferior a la máxima.');
- let trainings;
- try{
-  trainings=[...$('trainingList').querySelectorAll('.training-card')].map((card,index)=>collectTraining(card,trainingDrafts[index]));
- }catch(error){return alert(error.message)}
  const handsOn=$('handSymptoms').checked,stressOn=$('stressSymptoms').checked;
  const bowelCount=getVal('bowelFrequency');
  const bowelFrequency=bowelCount==='0'&&eventsForDate(previousISO(date)).some(item=>item.kind==='bowel')
   ?null:bowelCount;
- const entry={id:`entry-${date}`,uuid:makeUuid(),date,updatedAt:new Date().toISOString(),revision:1,history:[],source:{...SOURCE},aiAnalysis:null,wakeCompleted:true,wakeOnly:true,fatigue:getNum('fatigue'),legFatigue:$('legFatigue')?.checked??(editingDate?!!data.entries.find(x=>x.date===editingDate)?.legFatigue:false),handSwelling:handsOn?getNum('handSwelling'):0,handPain:handsOn?getNum('handPain'):0,abdominalInflammation:getNum('abdominalInflammation'),weightKg:nullableNumber(getVal('weightKg')),waistCm:nullableNumber(getVal('waistCm')),hipCm:nullableNumber(getVal('hipCm')),stress:null,eyeTic:false,peeling:handsOn?getNum('peeling'):0,calfTension:false,jawTension:false,handDetails:{right:{fingers:handsOn?[...document.querySelectorAll('[name=rightFinger]:checked')].map(x=>x.value):[],joint:handsOn?getVal('rightJoint'):'',mobilityLimited:handsOn&&$('rightMobilityLimited').checked},left:{fingers:handsOn?[...document.querySelectorAll('[name=leftFinger]:checked')].map(x=>x.value):[],joint:handsOn?getVal('leftJoint'):'',mobilityLimited:handsOn&&$('leftMobilityLimited').checked},notes:handsOn?getVal('handNotes').trim():'',photos:handsOn?clone(handPhotoData):[]},appleRestingHeartRate:getVal('appleRestingHeartRate'),appleHrvAverage:'',appleHrvMinMs:hrvMin,appleHrvMaxMs:hrvMax,wakeNotes:getVal('wakeNotes').trim(),paddedHands:handsOn&&$('paddedHands').checked,bowelFrequency:null,bristolType:'',bowelUrgency:false,bowelPain:false,bowelBlood:false,bowelNotes:'',dayContexts:[],customContext:'',respiratorySymptoms:false,nasalCongestion:0,mucus:0,...Object.fromEntries(respiratoryFields.map(([id])=>[id,false])),respiratoryNotes:'',respiratoryIntensity:null,sleepQuality:getNum('sleepQuality'),sleepDuration:minutesText(sleepMinutes||0),sleepMinutes:sleepMinutes||0,usualSchedule:$('usualSchedule').checked,sleepNotes:$('usualSchedule').checked?'':getVal('sleepNotes').trim(),usualFood:true,foodChanges:[],foodNotes:'',trainings:[],dailySupplements:[],sportSupplements:[],medicationsTaken:[],notes:''};
+ const entry={id:`entry-${date}`,uuid:makeUuid(),date,updatedAt:new Date().toISOString(),revision:1,history:[],source:{...SOURCE},aiAnalysis:null,wakeCompleted:true,wakeOnly:true,fatigue:getNum('fatigue'),legFatigue:$('legFatigue')?.checked??(editingDate?!!data.entries.find(x=>x.date===editingDate)?.legFatigue:false),handSwelling:handsOn?getNum('handSwelling'):0,handPain:handsOn?getNum('handPain'):0,abdominalInflammation:getNum('abdominalInflammation'),weightKg:nullableNumber(getVal('weightKg')),waistCm:nullableNumber(getVal('waistCm')),hipCm:nullableNumber(getVal('hipCm')),stress:null,eyeTic:false,peeling:handsOn?getNum('peeling'):0,calfTension:false,jawTension:false,handDetails:{right:{fingers:handsOn?[...document.querySelectorAll('[name=rightFinger]:checked')].map(x=>x.value):[],joint:handsOn?getVal('rightJoint'):'',mobilityLimited:handsOn&&$('rightMobilityLimited').checked},left:{fingers:handsOn?[...document.querySelectorAll('[name=leftFinger]:checked')].map(x=>x.value):[],joint:handsOn?getVal('leftJoint'):'',mobilityLimited:handsOn&&$('leftMobilityLimited').checked},notes:handsOn?getVal('handNotes').trim():'',photos:handsOn?clone(handPhotoData):[]},appleRestingHeartRate:getVal('appleRestingHeartRate'),appleHrvAverage:'',appleHrvMinMs:hrvMin,appleHrvMaxMs:hrvMax,wakeNotes:getVal('wakeNotes').trim(),paddedHands:handsOn&&$('paddedHands').checked,bowelFrequency:null,bristolType:'',bowelUrgency:false,bowelPain:false,bowelBlood:false,bowelNotes:'',dayContexts:[],customContext:'',respiratorySymptoms:false,nasalCongestion:0,mucus:0,...Object.fromEntries(respiratoryFields.map(([id])=>[id,false])),respiratoryNotes:'',respiratoryIntensity:null,sleepQuality:getNum('sleepQuality'),sleepDuration:minutesText(sleepMinutes||0),sleepMinutes:sleepMinutes||0,usualSchedule:$('usualSchedule').checked,sleepNotes:$('usualSchedule').checked?'':getVal('sleepNotes').trim(),usualFood:true,foodChanges:[],foodNotes:'',trainings:[],dailySupplements:collectItems('dailySupplements'),sportSupplements:[],medicationsTaken:[],notes:''};
  const entries=[...data.entries];
  const targetIndex=entries.findIndex(x=>x.date===date);
  const index=editingDate?entries.findIndex(x=>x.date===editingDate):targetIndex;
  const previous=entries[index];
  if(previous){
-  for(const key of ['stress','eyeTic','calfTension','jawTension','bowelFrequency','bristolType','bowelUrgency','bowelPain','bowelBlood','bowelNotes','dayContexts','customContext','respiratorySymptoms','nasalCongestion','mucus','respiratoryNotes','respiratoryIntensity','usualFood','foodChanges','foodNotes','trainings','dailySupplements','sportSupplements','medicationsTaken','notes','appleHrvAverage','hrv4TrainingScore','hrv4TrainingStatus']){
+  for(const key of ['stress','eyeTic','calfTension','jawTension','bowelFrequency','bristolType','bowelUrgency','bowelPain','bowelBlood','bowelNotes','dayContexts','customContext','respiratorySymptoms','nasalCongestion','mucus','respiratoryNotes','respiratoryIntensity','usualFood','foodChanges','foodNotes','trainings','sportSupplements','medicationsTaken','notes','appleHrvAverage','hrv4TrainingScore','hrv4TrainingStatus']){
    if(previous[key]!==undefined)entry[key]=clone(previous[key]);
   }
   for(const [id] of respiratoryFields)if(previous[id]!==undefined)entry[id]=previous[id];
@@ -1019,35 +1024,113 @@ $('quickForm').onsubmit=async event=>{
  showCalendarDate(date);
  alert(`Registro del ${fmtDate(date)} guardado correctamente.`);
 };
-$('routineForm').onsubmit=async event=>{
- event.preventDefault();
- stopActiveDictation();
- const date=$('routineDate').value||localISO();
- const entries=[...data.entries];
- const index=entries.findIndex(item=>item.date===date);
- const previous=index>=0?entries[index]:null;
- const now=new Date().toISOString();
- const visibleSport=collectItems('sportSupplements');
- const hiddenSport=(previous?.sportSupplements||[]).filter(item=>hiddenSportItems.has(item.id||item.supplementId));
- const entry={
-  ...(previous||{}),id:`entry-${date}`,uuid:previous?.uuid||makeUuid(),date,
-  createdAt:previous?.createdAt||now,updatedAt:now,revision:Number(previous?.revision||0)+1,
-  history:[...(previous?.history||[])],source:previous?.source||{...SOURCE},aiAnalysis:previous?.aiAnalysis??null,
-  wakeCompleted:previous?.wakeCompleted!==false,wakeOnly:previous?.wakeOnly??true,
-  dailySupplements:collectItems('dailySupplements'),sportSupplements:[...visibleSport,...hiddenSport],
-  medicationsTaken:collectItems('medications'),notes:getVal('notes').trim()
- };
- if(!previous)entry.wakeCompleted=false;
- if(previous){
-  const changes=diffFields(previous,entry);
-  if(Object.keys(changes).length)entry.history.push({origin:'user-edit',changedAt:now,revision:entry.revision,changes});
-  entry.history=entry.history.slice(-20);
-  entries[index]=entry;
- }else entries.push(entry);
- entries.sort((a,b)=>a.date.localeCompare(b.date));
- if(!await saveData({...data,entries}))return;
- showCalendarDate(date);
- alert(`Rutina del ${fmtDate(date)} guardada correctamente.`);
+
+let mealDraftItems=[];
+let editingMealId=null;
+function suggestedMealType(time=localTime()){
+ const hour=Number(time.split(':')[0]);
+ if(hour<10)return 'Desayuno';if(hour<12)return 'Media mañana';if(hour<16)return 'Comida';
+ if(hour<19)return 'Merienda';return 'Cena';
+}
+function blankMealItem(foodId='chicken-breast',quantity=1){return {foodId,quantity}}
+function foodById(id){return foodCatalog.find(item=>item.id===id)||foodCatalog.at(-1)}
+function itemSnapshot(item){
+ const food=foodById(item.foodId),quantity=Math.max(0,nullableNumber(item.quantity)??0);
+ const custom=item.foodId==='custom';
+ return {foodId:item.foodId,name:custom?String(item.name||'Otro alimento'):food.name,quantity,
+  portion:custom?String(item.portion||'porción'):food.portion,
+  kcal:(nullableNumber(custom?item.kcal:food.kcal)||0)*quantity,
+  protein:(nullableNumber(custom?item.protein:food.protein)||0)*quantity,
+  carbs:(nullableNumber(custom?item.carbs:food.carbs)||0)*quantity,
+  fat:(nullableNumber(custom?item.fat:food.fat)||0)*quantity};
+}
+function mealTotals(items=mealDraftItems){
+ const total={kcal:0,protein:0,carbs:0,fat:0};
+ for(const item of items.map(itemSnapshot))for(const key of Object.keys(total))total[key]+=Number(item[key]||0);
+ return Object.fromEntries(Object.entries(total).map(([key,value])=>[key,Number(value.toFixed(1))]));
+}
+function syncMealDraft(){
+ mealDraftItems=[...$('mealItems').querySelectorAll('.meal-item')].map(row=>({
+  foodId:row.querySelector('[data-meal-food]').value,
+  quantity:row.querySelector('[data-meal-quantity]').value,
+  name:row.querySelector('[data-custom-name]')?.value||'',portion:row.querySelector('[data-custom-portion]')?.value||'',
+  kcal:row.querySelector('[data-custom-kcal]')?.value||0,protein:row.querySelector('[data-custom-protein]')?.value||0,
+  carbs:row.querySelector('[data-custom-carbs]')?.value||0,fat:row.querySelector('[data-custom-fat]')?.value||0
+ }));
+}
+function renderMealItems(){
+ $('mealItems').innerHTML=mealDraftItems.map((item,index)=>{const food=foodById(item.foodId),custom=item.foodId==='custom';return `<article class="meal-item">
+  <div class="grid two"><label>Alimento<select data-meal-food>${foodCatalog.map(option=>`<option value="${option.id}" ${option.id===item.foodId?'selected':''}>${esc(option.name)}</option>`).join('')}</select></label>
+  <label>Cantidad de porciones<input data-meal-quantity type="number" min="0" step="0.1" inputmode="decimal" value="${esc(item.quantity??1)}"><small>${esc(custom?(item.portion||'Define la porción'):food.portion)}</small></label></div>
+  <div class="custom-food ${custom?'':'hidden'}"><div class="grid two"><label>Nombre<input data-custom-name value="${esc(item.name||'')}"></label><label>Porción<input data-custom-portion value="${esc(item.portion||'1 porción')}"></label></div>
+  <div class="grid four"><label>kcal<input data-custom-kcal type="number" min="0" step="any" value="${esc(item.kcal||0)}"></label><label>Proteína g<input data-custom-protein type="number" min="0" step="any" value="${esc(item.protein||0)}"></label><label>Hidratos g<input data-custom-carbs type="number" min="0" step="any" value="${esc(item.carbs||0)}"></label><label>Grasas g<input data-custom-fat type="number" min="0" step="any" value="${esc(item.fat||0)}"></label></div></div>
+  <button type="button" class="danger meal-remove" data-remove-meal-item="${index}">Quitar</button></article>`}).join('');
+ $('mealItems').querySelectorAll('input,select').forEach(field=>field.oninput=()=>{syncMealDraft();if(field.matches('[data-meal-food]'))renderMealItems();updateMealEstimate()});
+ $('mealItems').querySelectorAll('[data-remove-meal-item]').forEach(button=>button.onclick=()=>{syncMealDraft();mealDraftItems.splice(Number(button.dataset.removeMealItem),1);renderMealItems();updateMealEstimate()});
+ bindSmartNumericTimeFields($('mealItems'));
+ updateMealEstimate();
+}
+function updateMealEstimate(){
+ if($('mealItems').children.length)syncMealDraft();
+ const totals=mealTotals();
+ $('mealCalories').textContent=`≈ ${Math.round(totals.kcal)} kcal`;
+ $('mealMacros').textContent=`Proteína ${Math.round(totals.protein)} g · Hidratos ${Math.round(totals.carbs)} g · Grasas ${Math.round(totals.fat)} g`;
+}
+function resetMealForm(){
+ editingMealId=null;$('mealForm').reset();const now=new Date();$('mealDate').value=localISO(now);$('mealTime').value=localTime(now);$('mealType').value=suggestedMealType();
+ $('mealFormTitle').textContent='Nueva comida';$('cancelMealEdit').classList.add('hidden');$('mealTemplateNameWrap').classList.add('hidden');
+ mealDraftItems=[blankMealItem()];renderMealItems();
+}
+function loadMealTemplate(template){
+ resetMealForm();$('mealType').value=template.mealType||suggestedMealType();mealDraftItems=clone(template.items||[]);renderMealItems();
+ $('mealForm').scrollIntoView?.({behavior:'smooth',block:'start'});
+}
+function sportNutritionTemplates(){return data.sportSupplements.filter(item=>item.enabled!==false&&!hiddenSportItems.has(item.id)).map(item=>({
+ id:`sport-${item.id}`,name:item.name,mealType:'Después de entrenar',items:[item.id==='creatine'?{foodId:'creatine-dose',quantity:Number(item.dose||5)/5}:{foodId:'whey-scoop',quantity:Number(item.dose||30)/30}]
+}))}
+function renderMealTemplates(){
+ const templates=[...(data.mealTemplates||[]),...sportNutritionTemplates()];
+ $('mealTemplates').innerHTML=templates.map(template=>`<div class="template-item"><button type="button" class="template-load" data-load-template="${esc(template.id)}"><strong>${esc(template.name)}</strong><small>${esc(template.mealType||'Comida')} · ${(template.items||[]).length} alimentos</small></button>${String(template.id).startsWith('sport-')?'':`<button type="button" class="icon-mini danger-text" data-delete-template="${esc(template.id)}" aria-label="Eliminar plato">×</button>`}</div>`).join('');
+ $('mealTemplates').querySelectorAll('[data-load-template]').forEach(button=>button.onclick=()=>{const template=templates.find(item=>item.id===button.dataset.loadTemplate);if(template)loadMealTemplate(template)});
+ $('mealTemplates').querySelectorAll('[data-delete-template]').forEach(button=>button.onclick=async()=>{if(!confirm('¿Eliminar este plato habitual?'))return;const mealTemplates=data.mealTemplates.filter(item=>item.id!==button.dataset.deleteTemplate);if(await saveData({...data,mealTemplates}))renderMealTemplates()});
+}
+function mealsForDate(date){return data.events.filter(item=>item.kind==='food'&&item.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||''))}
+function totalsForMeals(meals){const result={kcal:0,protein:0,carbs:0,fat:0};for(const meal of meals)for(const key of Object.keys(result))result[key]+=Number(meal.totals?.[key]||0);return result}
+function allTrainings(){return [...data.trainings,...data.entries.flatMap(entry=>(entry.trainings||[]).map(training=>({...training,date:training.date||previousISO(entry.date)})))]}
+function trainingMinutes(training){return (nullableNumber(training.durationSeconds)??((nullableNumber(training.durationMinutes)??parseDuration(training.duration||''))||0)*60)/60}
+function trainingAdjustment(date){let kcal=0,carbs=0;for(const training of allTrainings().filter(item=>item.date===date)){const minutes=trainingMinutes(training),kind=training.kind||training.typeId||'other';const rate={run:10,bike:8,trekking:8,strength:5,functional:5,mobility:2.5,other:5}[kind]||5;kcal+=minutes*rate;carbs+=minutes*(['run','bike','trekking'].includes(kind)?.6:(['strength','functional'].includes(kind)?.25:.1))}return {kcal:Math.round(kcal),carbs:Math.round(carbs)}}
+function nutritionTargets(date){const settings=data.nutritionSettings||defaults.nutritionSettings,training=trainingAdjustment(date);return {kcal:Number(settings.baseCalories||2400)+training.kcal,protein:Number(settings.proteinTargetG||130),carbs:Number(settings.baseCarbsG||250)+training.carbs,fat:Number(settings.fatTargetG||80),training}}
+function progressMetric(label,value,target,unit){const percent=Math.min(100,Math.round(value/Math.max(1,target)*100));return `<div class="nutrition-metric"><div><span>${esc(label)}</span><strong>${Math.round(value)} / ${Math.round(target)} ${unit}</strong></div><div class="progress-track"><i style="width:${percent}%"></i></div></div>`}
+function latestRecovery(){
+ const now=new Date(),sessions=allTrainings().filter(item=>item.date&&item.time).map(item=>({...item,started:new Date(`${item.date}T${item.time}:00`)})).filter(item=>item.started<=now&&(now-item.started)<=18*3600000).sort((a,b)=>b.started-a.started);
+ const training=sessions[0];if(!training)return null;const minutes=trainingMinutes(training),kind=training.kind||training.typeId||'other';if(kind==='mobility')return null;
+ const carbNeed=['run','bike','trekking'].includes(kind)?Math.max(30,minutes*.7):25,proteinNeed=25;
+ const after=data.events.filter(item=>item.kind==='food'&&item.date&&item.time&&new Date(`${item.date}T${item.time}:00`)>=training.started&&new Date(`${item.date}T${item.time}:00`)<=now);
+ const eaten=totalsForMeals(after);return {training,carbs:Math.max(0,carbNeed-eaten.carbs),protein:Math.max(0,proteinNeed-eaten.protein)};
+}
+function renderNutritionDashboard(){
+ const date=$('mealDate').value||localISO(),eaten=totalsForMeals(mealsForDate(date)),target=nutritionTargets(date);
+ $('nutritionProgress').innerHTML=[progressMetric('Energía',eaten.kcal,target.kcal,'kcal'),progressMetric('Proteína',eaten.protein,target.protein,'g'),progressMetric('Hidratos',eaten.carbs,target.carbs,'g'),progressMetric('Grasas',eaten.fat,target.fat,'g')].join('')+`<p class="muted">Objetivo orientativo${target.training.kcal?` · entrenamiento: +${target.training.kcal} kcal y +${target.training.carbs} g de hidratos`:''}.</p>`;
+ const recovery=date===localISO()?latestRecovery():null;$('recoveryAdvice').innerHTML=date!==localISO()?'<p class="muted">La recuperación pendiente se muestra únicamente al consultar el día actual.</p>':(recovery&&(recovery.carbs>=5||recovery.protein>=5)?`<strong>Recuperación aún pendiente</strong><p>Tras ${esc(recovery.training.typeName||'el entrenamiento')}: aproximadamente ${Math.round(recovery.carbs)} g de hidratos y ${Math.round(recovery.protein)} g de proteína. La recomendación continúa aunque haya cambiado el día.</p>`:'<p class="muted">Sin recuperación pendiente detectada en las últimas 18 horas.</p>');
+}
+function renderTodayMeals(){
+ const date=$('mealDate').value||localISO(),meals=mealsForDate(date);$('todayMeals').innerHTML=meals.length?`<h3>Comidas del ${fmtDate(date)}</h3>${meals.map(episodeSummary).join('')}`:'<article class="card"><p class="muted">Todavía no hay comidas registradas en esta fecha.</p></article>';
+ $('todayMeals').querySelectorAll('[data-edit-episode],[data-delete-episode]').forEach(button=>button.onclick=handleActivityAction);
+}
+function prepareNutrition(){if(!$('mealDate').value)resetMealForm();renderMealTemplates();renderNutritionDashboard();renderTodayMeals()}
+function openMeal(meal){go('nutrition');editingMealId=meal.uuid;$('mealFormTitle').textContent='Editar comida';$('cancelMealEdit').classList.remove('hidden');$('mealDate').value=meal.date;$('mealTime').value=meal.time||'';$('mealType').value=meal.mealType||'Otro';$('mealNotes').value=meal.notes||'';mealDraftItems=(meal.items||[]).map(item=>({...item,kcal:item.quantity?item.kcal/item.quantity:item.kcal,protein:item.quantity?item.protein/item.quantity:item.protein,carbs:item.quantity?item.carbs/item.quantity:item.carbs,fat:item.quantity?item.fat/item.quantity:item.fat}));if(!mealDraftItems.length)mealDraftItems=[{foodId:'custom',quantity:1,name:meal.food||'Comida anterior',portion:'porción',kcal:0,protein:0,carbs:0,fat:0}];renderMealItems();renderNutritionDashboard();renderTodayMeals();$('mealForm').scrollIntoView?.({behavior:'smooth',block:'start'})}
+$('addMealItem').onclick=()=>{syncMealDraft();mealDraftItems.push(blankMealItem());renderMealItems()};
+$('saveMealTemplate').onchange=()=>{$('mealTemplateNameWrap').classList.toggle('hidden',!$('saveMealTemplate').checked)};
+$('cancelMealEdit').onclick=resetMealForm;
+$('mealDate').onchange=()=>{renderNutritionDashboard();renderTodayMeals()};
+$('nutritionRefresh').onclick=()=>{renderNutritionDashboard();renderTodayMeals()};
+$('mealForm').onsubmit=async event=>{
+ event.preventDefault();syncMealDraft();const items=mealDraftItems.map(itemSnapshot).filter(item=>item.quantity>0&&item.name.trim());if(!items.length)return alert('Añade al menos un alimento.');
+ const date=getVal('mealDate'),time=getVal('mealTime'),now=new Date().toISOString(),previous=data.events.find(item=>item.uuid===editingMealId),totals=mealTotals(mealDraftItems);
+ const meal={...previous,kind:'food',uuid:previous?.uuid||makeUuid(),date,time,mealType:getVal('mealType'),items,totals,notes:getVal('mealNotes').trim(),createdAt:previous?.createdAt||now,updatedAt:now};
+ let mealTemplates=data.mealTemplates||[];
+ if($('saveMealTemplate').checked){const name=getVal('mealTemplateName').trim();if(!name)return alert('Escribe un nombre para el plato habitual.');mealTemplates=[...mealTemplates,{id:`meal-${Date.now()}`,name,mealType:meal.mealType,items:clone(mealDraftItems)}]}
+ const events=previous?data.events.map(item=>item.uuid===meal.uuid?meal:item):[...data.events,meal];if(!await saveData({...data,events,mealTemplates}))return;resetMealForm();renderMealTemplates();renderNutritionDashboard();renderTodayMeals();alert('Comida guardada.');
 };
 function updateHome(){
  const today=data.entries.find(x=>x.date===localISO()&&x.wakeCompleted!==false);
@@ -1149,12 +1232,11 @@ async function handleActivityAction(event){
   if(await saveData({...data,events})){
    if(editingEpisodeId===deleteEpisode)resetEpisodeForm();
    renderCalendar();
-   renderEpisodeList();
+   if($('nutrition')?.classList.contains('active')){renderNutritionDashboard();renderTodayMeals()}
   }
  }
 }
 $('dayDetail').addEventListener('click',handleActivityAction);
-$('episodeList').addEventListener('click',handleActivityAction);
 function recoverySummary(entry){
  const min=nullableNumber(entry.appleHrvMinMs),max=nullableNumber(entry.appleHrvMaxMs);
  const bits=[
@@ -1177,7 +1259,7 @@ function respiratorySummary(entry){
  return `<p><b>🤧 Respiratorio:</b> ${symptoms.map(esc).join(' · ')}</p>${entry.respiratoryNotes?`<p>${esc(entry.respiratoryNotes)}</p>`:''}`;
 }
 function handSideSummary(label,h){if(!h)return '';const bits=[];if(h.fingers?.length)bits.push(h.fingers.join(', '));if(h.joint)bits.push(h.joint);if(h.mobilityLimited)bits.push('movilidad limitada');return bits.length?`<p><b>${label}:</b> ${esc(bits.join(' · '))}</p>`:''}
-function showDay(date){const e=data.entries.find(x=>x.date===date),activity=activityForDate(date);if(!e){$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>${fmtDate(date)}</strong><p class="muted">Sin registro diario.</p></div>${activity}`;return}if(e.wakeOnly){const supp=[...(e.dailySupplements||[]),...(e.sportSupplements||[])],hd=e.handDetails||{};const routine=`${supp.length?`<p><b>💊 Suplementos:</b> ${supp.map(s=>`${esc(s.name)} ${s.amount} ${esc(s.unit)}`).join(' · ')}</p>`:''}${(e.medicationsTaken||[]).length?`<p><b>💉 Medicación:</b> ${e.medicationsTaken.map(s=>`${esc(s.name)} ${s.amount} ${esc(s.unit)}`).join(' · ')}</p>`:''}${e.notes?`<p><b>Observaciones:</b> ${esc(e.notes)}</p>`:''}`;if(e.wakeCompleted===false){$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>Rutina del ${fmtDate(date)}</strong>${routine||'<p class="muted">Sin elementos marcados.</p>'}<div class="button-row"><button class="secondary-button" onclick="editRoutine('${date}')">Editar rutina</button><button class="danger" onclick="deleteEntry('${date}')">Eliminar</button></div></div>${activity}`;return}$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>Registro al despertar · ${fmtDate(date)}</strong><div class="detail-section"><h4>🌙 Sueño</h4><p><b>Descanso:</b> ${e.sleepQuality??0}/100 · ${esc(e.sleepDuration||minutesText(e.sleepMinutes||0))}${e.usualSchedule===false?' · horario no habitual':''}</p>${e.sleepNotes?`<p>${esc(e.sleepNotes)}</p>`:''}</div><div class="detail-section"><h4>🌅 Estado al despertar</h4><p><b>Cansancio:</b> ${e.fatigue??0}/10</p><p><b>Manos:</b> inflamación ${e.handSwelling??0}/10 · dolor ${e.handPain??0}/10 · descamación ${e.peeling??0}/3</p><p><b>🫃 Inflamación abdominal:</b> ${e.abdominalInflammation??0}/4${e.weightKg!=null?` · <b>⚖️ Peso:</b> ${e.weightKg} kg`:''}${e.waistCm!=null?` · <b>Cintura:</b> ${e.waistCm} cm`:''}${e.hipCm!=null?` · <b>Cadera:</b> ${e.hipCm} cm`:''}</p>${handSideSummary('Derecha',hd.right)}${handSideSummary('Izquierda',hd.left)}${hd.notes?`<p>${esc(hd.notes)}</p>`:''}${(hd.photos||[]).map((x,i)=>`<img class="history-hand-photo" src="${x}" alt="Foto de manos ${i+1}">`).join('')}${e.paddedHands?'<p>Sensación de manos acolchadas</p>':''}${e.wakeNotes?`<p><b>Observaciones:</b> ${esc(e.wakeNotes)}</p>`:''}${recoverySummary(e)}</div>${routine?`<div class="detail-section"><h4>💊 Rutina del día</h4>${routine}</div>`:''}<div class="button-row"><button class="secondary-button" onclick="editEntry('${date}')">Editar despertar</button><button class="secondary-button" onclick="editRoutine('${date}')">Editar rutina</button><button class="danger" onclick="deleteEntry('${date}')">Eliminar</button></div></div>${activity}`;return}const prev=previousISO(date),supp=[...(e.dailySupplements||[]),...(e.sportSupplements||[])],hd=e.handDetails||{},ctxMap={routine:'🏠 Rutina habitual',vacation:'🌴 Vacaciones',travel:'✈️ Viaje',hotel:'🏨 Hotel',competition:'🏃 Competición',work:'💼 Mucho trabajo',illness:'🤒 Enfermedad',family:'🎉 Evento familiar',custom:e.customContext||'Otro'},ctx=(e.dayContexts||[e.dayContext||'routine']).map(x=>ctxMap[x]||x).join(' · ');const hasBowelEvents=eventsForDate(prev).some(item=>item.kind==='bowel');
+function showDay(date){const e=data.entries.find(x=>x.date===date),activity=activityForDate(date);if(!e){$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>${fmtDate(date)}</strong><p class="muted">Sin registro diario.</p></div>${activity}`;return}if(e.wakeOnly){const supp=[...(e.dailySupplements||[]),...(e.sportSupplements||[])],hd=e.handDetails||{};const routine=`${supp.length?`<p><b>💊 Suplementos:</b> ${supp.map(s=>`${esc(s.name)} ${s.amount} ${esc(s.unit)}`).join(' · ')}</p>`:''}${(e.medicationsTaken||[]).length?`<p><b>💉 Medicación histórica:</b> ${e.medicationsTaken.map(s=>`${esc(s.name)} ${s.amount} ${esc(s.unit)}`).join(' · ')}</p>`:''}${e.notes?`<p><b>Observaciones:</b> ${esc(e.notes)}</p>`:''}`;if(e.wakeCompleted===false){$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>Registro incompleto del ${fmtDate(date)}</strong>${routine||'<p class="muted">Sin elementos marcados.</p>'}<div class="button-row"><button class="danger" onclick="deleteEntry('${date}')">Eliminar</button></div></div>${activity}`;return}$('dayDetail').innerHTML=`<div class="day-detail-card"><strong>Registro al despertar · ${fmtDate(date)}</strong><div class="detail-section"><h4>🌙 Sueño</h4><p><b>Descanso:</b> ${e.sleepQuality??0}/100 · ${esc(e.sleepDuration||minutesText(e.sleepMinutes||0))}${e.usualSchedule===false?' · horario no habitual':''}</p>${e.sleepNotes?`<p>${esc(e.sleepNotes)}</p>`:''}</div><div class="detail-section"><h4>🌅 Estado al despertar</h4><p><b>Cansancio:</b> ${e.fatigue??0}/10</p><p><b>Manos:</b> inflamación ${e.handSwelling??0}/10 · dolor ${e.handPain??0}/10 · descamación ${e.peeling??0}/3</p><p><b>🫃 Inflamación abdominal:</b> ${e.abdominalInflammation??0}/4${e.weightKg!=null?` · <b>⚖️ Peso:</b> ${e.weightKg} kg`:''}${e.waistCm!=null?` · <b>Cintura:</b> ${e.waistCm} cm`:''}${e.hipCm!=null?` · <b>Cadera:</b> ${e.hipCm} cm`:''}</p>${handSideSummary('Derecha',hd.right)}${handSideSummary('Izquierda',hd.left)}${hd.notes?`<p>${esc(hd.notes)}</p>`:''}${(hd.photos||[]).map((x,i)=>`<img class="history-hand-photo" src="${x}" alt="Foto de manos ${i+1}">`).join('')}${e.paddedHands?'<p>Sensación de manos acolchadas</p>':''}${e.wakeNotes?`<p><b>Observaciones:</b> ${esc(e.wakeNotes)}</p>`:''}${recoverySummary(e)}</div>${routine?`<div class="detail-section"><h4>💊 Suplementación</h4>${routine}</div>`:''}<div class="button-row"><button class="secondary-button" onclick="editEntry('${date}')">Editar despertar</button><button class="danger" onclick="deleteEntry('${date}')">Eliminar</button></div></div>${activity}`;return}const prev=previousISO(date),supp=[...(e.dailySupplements||[]),...(e.sportSupplements||[])],hd=e.handDetails||{},ctxMap={routine:'🏠 Rutina habitual',vacation:'🌴 Vacaciones',travel:'✈️ Viaje',hotel:'🏨 Hotel',competition:'🏃 Competición',work:'💼 Mucho trabajo',illness:'🤒 Enfermedad',family:'🎉 Evento familiar',custom:e.customContext||'Otro'},ctx=(e.dayContexts||[e.dayContext||'routine']).map(x=>ctxMap[x]||x).join(' · ');const hasBowelEvents=eventsForDate(prev).some(item=>item.kind==='bowel');
  const showBowelCount=e.bowelFrequency!=null&&e.bowelFrequency!==''&&(!hasBowelEvents||Number(e.bowelFrequency)>0);
  const bowelBits=[
   showBowelCount?`${Number(e.bowelFrequency)===4?'4 o más':e.bowelFrequency} deposiciones`:'',
@@ -1190,8 +1272,7 @@ window.deleteEntry=async date=>{
  if(await saveData({...data,entries})){renderCalendar();updateHome()}
 };
 function restoreItemGroup(group,taken){document.querySelectorAll(`[data-group="${group}"][data-item-check]`).forEach(cb=>cb.checked=false);for(const x of taken||[]){const cb=document.querySelector(`[data-item-check="${x.id}"][data-group="${group}"]`),dose=document.querySelector(`[data-item-dose="${x.id}"][data-group="${group}"]`);if(cb)cb.checked=true;if(dose)dose.value=x.amount}}
-window.editRoutine=date=>{go('routine');prepareRoutine(date)};
-window.editEntry=date=>{const e=data.entries.find(x=>x.date===date);if(!e)return;editingDate=date;go('record');$('entryDate').value=e.date;updateTemporalLabels();for(const id of ['fatigue','handSwelling','handPain','abdominalInflammation','stress','peeling']){$(id).value=e[id]||0;$(id).dispatchEvent(new Event('input'))}if($('legFatigue'))$('legFatigue').checked=!!e.legFatigue;$('paddedHands').checked=!!e.paddedHands;$('wakeNotes').value=e.wakeNotes||'';const handsOn=hasHandSymptoms(e);$('handSymptoms').checked=handsOn;toggleHandSymptoms(handsOn);const stressOn=Number(e.stress||0)>0||!!e.eyeTic||!!e.calfTension||!!e.jawTension;$('stressSymptoms').checked=stressOn;toggleStressDetail();$('eyeTic').checked=!!e.eyeTic;$('calfTension').checked=!!e.calfTension;$('jawTension').checked=!!e.jawTension;$('weightKg').value=e.weightKg??'';$('waistCm').value=e.waistCm??'';$('hipCm').value=e.hipCm??'';updateAnthropometryHints();$('sleepQuality').value=e.sleepQuality||0;$('sleepDuration').value=e.sleepDuration||minutesText(e.sleepMinutes||0);$('usualSchedule').checked=e.usualSchedule!==false;$('sleepNotes').value=e.sleepNotes||'';$('sleepException').classList.toggle('hidden',$('usualSchedule').checked);$('usualFood').checked=e.usualFood!==false;document.querySelectorAll('[name=foodChange]').forEach(x=>x.checked=(e.foodChanges||[e.foodChange].filter(Boolean)).includes(x.value));$('foodNotes').value=e.foodNotes||'';$('foodException').classList.toggle('hidden',$('usualFood').checked);const contexts=e.dayContexts||[e.dayContext||'routine'];document.querySelectorAll('[name=dayContext]').forEach(x=>x.checked=contexts.includes(x.value));$('customContext').value=e.customContext||'';$('customContextWrap').classList.toggle('hidden',!contexts.includes('custom'));restoreRespiratory(e);const hd=e.handDetails||{};for(const side of ['right','left']){const h=hd[side]||{};$(side+'Joint').value=h.joint||'';$(side+'MobilityLimited').checked=!!h.mobilityLimited;document.querySelectorAll(`[name=${side}Finger]`).forEach(x=>x.checked=(h.fingers||[]).includes(x.value))}$('handNotes').value=hd.notes||'';handPhotoData=clone(hd.photos||[]);renderHandPhoto();toggleHandDetail(!!((hd.right?.fingers||[]).length||(hd.left?.fingers||[]).length||hd.right?.joint||hd.left?.joint||hd.notes||(hd.photos||[]).length||e.handSwelling>=2||e.handPain>=2));$('appleRestingHeartRate').value=e.appleRestingHeartRate??'';$('appleHrvAverage').value=e.appleHrvAverage??'';$('appleHrvMin').value=e.appleHrvMinMs??'';$('appleHrvMax').value=e.appleHrvMaxMs??'';$('bowelFrequency').value=e.bowelFrequency??0;$('bristolType').value=e.bristolType??'';$('bowelUrgency').checked=!!e.bowelUrgency;$('bowelPain').checked=!!e.bowelPain;$('bowelBlood').checked=!!e.bowelBlood;$('bowelNotes').value=e.bowelNotes||'';toggleBowelDetail();updateCompactSummaries();$('notes').value=e.notes||'';trainingDrafts=clone(e.trainings||[]).map(makeTrainingDraft);renderTrainingList();renderRecordItems();restoreItemGroup('dailySupplements',e.dailySupplements||[]);restoreItemGroup('sportSupplements',e.sportSupplements||[]);restoreItemGroup('medications',e.medicationsTaken||[]);bindExpandableTextareas();bindRanges();bindScaleInfo()};
+window.editEntry=date=>{const e=data.entries.find(x=>x.date===date);if(!e)return;editingDate=date;go('record');$('entryDate').value=e.date;updateTemporalLabels();for(const id of ['fatigue','handSwelling','handPain','abdominalInflammation','stress','peeling']){$(id).value=e[id]||0;$(id).dispatchEvent(new Event('input'))}if($('legFatigue'))$('legFatigue').checked=!!e.legFatigue;$('paddedHands').checked=!!e.paddedHands;$('wakeNotes').value=e.wakeNotes||'';const handsOn=hasHandSymptoms(e);$('handSymptoms').checked=handsOn;toggleHandSymptoms(handsOn);const stressOn=Number(e.stress||0)>0||!!e.eyeTic||!!e.calfTension||!!e.jawTension;$('stressSymptoms').checked=stressOn;toggleStressDetail();$('eyeTic').checked=!!e.eyeTic;$('calfTension').checked=!!e.calfTension;$('jawTension').checked=!!e.jawTension;$('weightKg').value=e.weightKg??'';$('waistCm').value=e.waistCm??'';$('hipCm').value=e.hipCm??'';updateAnthropometryHints();$('sleepQuality').value=e.sleepQuality||0;$('sleepDuration').value=e.sleepDuration||minutesText(e.sleepMinutes||0);$('usualSchedule').checked=e.usualSchedule!==false;$('sleepNotes').value=e.sleepNotes||'';$('sleepException').classList.toggle('hidden',$('usualSchedule').checked);$('usualFood').checked=e.usualFood!==false;document.querySelectorAll('[name=foodChange]').forEach(x=>x.checked=(e.foodChanges||[e.foodChange].filter(Boolean)).includes(x.value));$('foodNotes').value=e.foodNotes||'';$('foodException').classList.toggle('hidden',$('usualFood').checked);const contexts=e.dayContexts||[e.dayContext||'routine'];document.querySelectorAll('[name=dayContext]').forEach(x=>x.checked=contexts.includes(x.value));$('customContext').value=e.customContext||'';$('customContextWrap').classList.toggle('hidden',!contexts.includes('custom'));restoreRespiratory(e);const hd=e.handDetails||{};for(const side of ['right','left']){const h=hd[side]||{};$(side+'Joint').value=h.joint||'';$(side+'MobilityLimited').checked=!!h.mobilityLimited;document.querySelectorAll(`[name=${side}Finger]`).forEach(x=>x.checked=(h.fingers||[]).includes(x.value))}$('handNotes').value=hd.notes||'';handPhotoData=clone(hd.photos||[]);renderHandPhoto();toggleHandDetail(!!((hd.right?.fingers||[]).length||(hd.left?.fingers||[]).length||hd.right?.joint||hd.left?.joint||hd.notes||(hd.photos||[]).length||e.handSwelling>=2||e.handPain>=2));$('appleRestingHeartRate').value=e.appleRestingHeartRate??e.appleRestingHeartRateBpm??'';$('appleHrvAverage').value=e.appleHrvAverage??e.appleHrvAverageMs??'';$('appleHrvMin').value=e.appleHrvMinMs??'';$('appleHrvMax').value=e.appleHrvMaxMs??'';$('bowelFrequency').value=e.bowelFrequency??0;$('bristolType').value=e.bristolType??'';$('bowelUrgency').checked=!!e.bowelUrgency;$('bowelPain').checked=!!e.bowelPain;$('bowelBlood').checked=!!e.bowelBlood;$('bowelNotes').value=e.bowelNotes||'';toggleBowelDetail();updateCompactSummaries();renderRecordItems();restoreItemGroup('dailySupplements',e.dailySupplements||[]);bindExpandableTextareas();bindRanges();bindScaleInfo()};
 function renderStats(){const arr=data.entries.filter(e=>e.wakeCompleted!==false).sort((a,b)=>a.date.localeCompare(b.date));const avg=k=>arr.length?(arr.reduce((s,e)=>s+Number(e[k]||0),0)/arr.length).toFixed(1):'—';const weights=arr.filter(e=>e.weightKg!=null&&Number.isFinite(Number(e.weightKg)));const lastWeight=weights.length?`${Number(weights.at(-1).weightKg).toFixed(1)} kg`:'—';const waists=arr.filter(e=>e.waistCm!=null&&Number.isFinite(Number(e.waistCm))),hips=arr.filter(e=>e.hipCm!=null&&Number.isFinite(Number(e.hipCm)));const lastWaist=waists.length?`${Number(waists.at(-1).waistCm).toFixed(1)} cm`:'—',lastHip=hips.length?`${Number(hips.at(-1).hipCm).toFixed(1)} cm`:'—';$('statsCards').innerHTML=[['Días registrados',arr.length],['Inflamación manos media',avg('handSwelling')],['Inflamación abdominal media',avg('abdominalInflammation')],['Último peso',lastWeight],['Última cintura',lastWaist],['Última cadera',lastHip],['Cansancio medio',avg('fatigue')],['Entrenamientos',data.trainings.length+arr.reduce((s,e)=>s+(e.trainings?.length||0),0)]].map(([l,v])=>`<article class="stat-card"><span>${l}</span><strong>${v}</strong></article>`).join('');drawChart(arr)}
 function drawChart(arr){const c=$('statsChart'),ctx=c.getContext('2d'),dpr=devicePixelRatio||1,w=c.clientWidth||700,h=220;c.width=w*dpr;c.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.strokeStyle='#dfe8e8';for(let i=0;i<=5;i++){const y=20+i*(h-40)/5;ctx.beginPath();ctx.moveTo(28,y);ctx.lineTo(w-8,y);ctx.stroke()}if(!arr.length){ctx.fillStyle='#74868b';ctx.fillText('Sin datos',w/2-20,h/2);return}for(const [k,col] of [['handSwelling','#0f766e'],['fatigue','#d99a24']]){ctx.strokeStyle=col;ctx.lineWidth=3;ctx.beginPath();arr.forEach((e,i)=>{const x=30+i*(w-44)/Math.max(1,arr.length-1),y=h-20-(Number(e[k]||0)/10)*(h-40);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()}}
 const configMeta={dailySupplements:{title:'Suplemento diario'},sportSupplements:{title:'Suplemento deportivo'},medications:{title:'Medicación'},trainingTypes:{title:'Tipo de entrenamiento'}};
